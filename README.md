@@ -32,12 +32,16 @@ git checkout -b feature/email-verification
 ---
 
 ### 작업 흐름
+0. dev 브랜치 원격 최신 반영
 1. 이슈 생성
 2. dev 브랜치에서 feature 브랜치 생성
 3. 기능 개발 및 commit
-4. dev 브랜치로 merge
-5. 테스트 완료 후 main 브랜치로 merge
-6.
+4. 작업 중간 dev 최신 내용 가져오기
+5. feature 브랜치 작업 완료 후 dev로 merge
+6. dev에서 테스트 완료 후 main 브랜치로 merge
+   🚨 main으로 merge는 가급적 하지 않는다. dev에서 모든 기능 구현 완료 후 main으로 merge 힌디. 🚨
+
+
 ---
 
 # ✅ 📌 커밋 규칙
