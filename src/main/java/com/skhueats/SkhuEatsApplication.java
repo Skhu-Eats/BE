@@ -1,4 +1,4 @@
-package com.skhueats.skhu_eats;
+package com.skhueats;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
