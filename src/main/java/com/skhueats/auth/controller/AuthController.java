@@ -1,7 +1,7 @@
 package com.skhueats.auth.controller;
 
-import com.skhueats.auth.dto.EmailRequest;
-import com.skhueats.auth.dto.VerifyCodeRequest;
+import com.skhueats.auth.dto.request.EmailRequest;
+import com.skhueats.auth.dto.request.VerifyCodeRequest;
 import com.skhueats.auth.service.AuthService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

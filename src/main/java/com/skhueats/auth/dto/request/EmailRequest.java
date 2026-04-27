@@ -1,4 +1,4 @@
-package com.skhueats.auth.dto;
+package com.skhueats.auth.dto.request;
 
 public class EmailRequest {
 
