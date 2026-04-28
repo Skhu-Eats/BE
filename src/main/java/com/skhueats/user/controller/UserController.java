@@ -1,5 +1,6 @@
 package com.skhueats.user.controller;
 
+import com.skhueats.auth.dto.request.RegisterRequestDto;
 import com.skhueats.user.dto.SignupRequest;
 import com.skhueats.user.service.UserService;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +16,7 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public String signup(@RequestBody SignupRequest request) {
+    public String signup(@RequestBody RegisterRequestDto request) {
         userService.signup(request);
         return "회원가입 완료";
     }

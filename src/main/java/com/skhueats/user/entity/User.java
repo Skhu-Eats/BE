@@ -26,9 +26,45 @@ public class User {
     @Column(nullable = false, unique = true, length = 50)
     private String nickname;
 
-    @Column(nullable = false)
+    @Column(name = "email_verified", nullable = false)
     private boolean emailVerified;
 
+    @Column(nullable = false, length = 50)
+    private String department;
+
+    @Column(name = "admission_year", nullable = false, length = 10)
+    private String admissionYear;
+
+    @Column(length = 255)
+    private String bio;
+
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column(name = "manner_score", nullable = false)
+    private Integer mannerScore;
+
+    @Column(name = "post_count", nullable = false)
+    private Integer postCount;
+
+    @Column(name = "join_count", nullable = false)
+    private Integer joinCount;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.id == null) {
+            this.id = UUID.randomUUID().toString();
+        }
+
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }
