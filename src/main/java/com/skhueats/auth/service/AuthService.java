@@ -1,5 +1,7 @@
 package com.skhueats.auth.service;
 
+import com.skhueats.global.exception.ApiException;
+import com.skhueats.global.exception.ErrorCode;
 import com.skhueats.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
@@ -8,7 +10,7 @@ import java.util.Random;
 @Service
 public class AuthService {
 
-    private static final String SCHOOL_DOMAIN = "@office.skhu.ac.kr";
+    private static final String SCHOOL_DOMAIN = "@skhu.ac.kr";
 
     private final RedisVerificationService redisVerificationService;
     private final MailService mailService;
@@ -24,19 +26,27 @@ public class AuthService {
 
     public void validateSchoolEmail(String email) {
         if (email == null || !email.endsWith(SCHOOL_DOMAIN)) {
-            throw new RuntimeException("학교 이메일만 사용할 수 있습니다.");
+            throw new ApiException(ErrorCode.INVALID_SCHOOL_EMAIL);
         }
     }
+
 
     public void validateDuplicateUser(String email, String nickname) {
         if (userRepository.existsByEmail(email)) {
-            throw new RuntimeException("이미 가입된 이메일입니다.");
+            throw new ApiException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         if (userRepository.existsByNickname(nickname)) {
-            throw new RuntimeException("이미 사용 중인 닉네임입니다.");
+            throw new ApiException(ErrorCode.NICKNAME_ALREADY_EXISTS);
         }
     }
+
+    public void validateEmailVerified(String email) {
+        if (!redisVerificationService.consumeVerifiedEmail(email)) {
+            throw new ApiException(ErrorCode.EMAIL_NOT_VERIFIED);
+        }
+    }
+
 
     public String createVerificationCode() {
         Random random = new Random();
@@ -48,16 +58,14 @@ public class AuthService {
         validateSchoolEmail(email);
 
         if (redisVerificationService.isResendBlocked(email)) {
-            throw new RuntimeException("인증 메일은 1분 후 다시 요청할 수 있습니다.");
+            throw new ApiException(ErrorCode.VERIFICATION_RESEND_BLOCKED);
         }
 
         String code = createVerificationCode();
-
         redisVerificationService.saveVerificationCode(email, code);
 
         String subject = "성공회대학교 이메일 인증코드";
         String text = "인증코드는 [" + code + "] 입니다. 5분 이내에 입력해주세요.";
-
         mailService.sendEmail(email, subject, text);
     }
 
@@ -65,26 +73,27 @@ public class AuthService {
         validateSchoolEmail(email);
 
         if (redisVerificationService.isLocked(email)) {
-            throw new RuntimeException("인증 실패 횟수를 초과했습니다. 10분 후 다시 시도해주세요.");
+            throw new ApiException(ErrorCode.VERIFICATION_ATTEMPT_LOCKED);
         }
 
         if (!redisVerificationService.exists(email)) {
-            throw new RuntimeException("인증코드가 만료되었거나 존재하지 않습니다.");
+            throw new ApiException(ErrorCode.VERIFICATION_CODE_EXPIRED);
         }
 
         String savedCode = redisVerificationService.getVerificationCode(email);
 
         if (savedCode == null || !savedCode.equals(code)) {
             int failedCount = redisVerificationService.increaseFailCount(email);
-
             if (failedCount >= 5) {
-                throw new RuntimeException("인증코드를 5회 이상 틀렸습니다. 10분 동안 인증이 제한됩니다.");
+                throw new ApiException(ErrorCode.VERIFICATION_ATTEMPT_LOCKED);
             }
-
-            throw new RuntimeException("인증코드가 일치하지 않습니다. 현재 실패 횟수: " + failedCount + "회");
+            throw new ApiException(ErrorCode.VERIFICATION_CODE_MISMATCH,
+                    "인증코드가 일치하지 않습니다. 현재 실패 횟수: " + failedCount + "회");
         }
 
         redisVerificationService.saveVerifiedEmail(email);
         redisVerificationService.clearVerificationState(email);
     }
+
+
 }
