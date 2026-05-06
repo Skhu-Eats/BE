@@ -33,7 +33,7 @@ public class User {
     private String department;
 
     @Column(name = "admission_year", nullable = false, length = 10)
-    private String admissionYear;
+    private Integer admissionYear;
 
     @Column(length = 255)
     private String bio;

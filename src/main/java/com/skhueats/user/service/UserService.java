@@ -12,7 +12,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserService {
 
-    private static final String SCHOOL_DOMAIN = "@skhu.ac.kr";
+    private static final java.util.List<String> SCHOOL_DOMAINS = java.util.List.of(
+            "@skhu.ac.kr",
+            "@office.skhu.ac.kr"
+    );
 
     private final UserRepository userRepository;
     private final RedisVerificationService redisVerificationService;
@@ -26,14 +29,14 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public void signup(RegisterRequestDto request) {
+    public void register(RegisterRequestDto request) {
         if (request == null) {
             throw new ApiException(ErrorCode.INVALID_REQUEST, "회원가입 요청 정보가 없습니다.");
         }
 
         String email = request.getEmail();
 
-        if (email == null || !email.endsWith(SCHOOL_DOMAIN)) {
+        if (SCHOOL_DOMAINS.stream().noneMatch(email::endsWith)) {
             throw new ApiException(ErrorCode.INVALID_SCHOOL_EMAIL);
         }
 
