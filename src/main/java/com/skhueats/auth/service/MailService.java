@@ -13,11 +13,17 @@ public class MailService {
         this.javaMailSender = javaMailSender;
     }
 
-    public void sendEmail(String to, String subject, String text) {
+    public void sendVerificationCode(String to, String code) {
         SimpleMailMessage message = new SimpleMailMessage();
+
         message.setTo(to);
-        message.setSubject(subject);
-        message.setText(text);
+        message.setSubject("[SKHU Eats] 이메일 인증 코드 안내");
+        message.setText(
+                "안녕하세요. SKHU Eats입니다.\n\n" +
+                        "이메일 인증 코드는 다음과 같습니다.\n\n" +
+                        "인증 코드: " + code + "\n\n" +
+                        "인증 코드는 일정 시간이 지나면 만료됩니다."
+        );
 
         javaMailSender.send(message);
     }

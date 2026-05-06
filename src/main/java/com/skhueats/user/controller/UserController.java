@@ -16,10 +16,4 @@ public class UserController {
     public UserController(UserService userService) {
         this.userService = userService;
     }
-
-    @PostMapping("/register")
-    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequestDto request) {
-        userService.register(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body("회원가입 완료");
-    }
 }

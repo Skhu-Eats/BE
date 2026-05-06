@@ -36,6 +36,42 @@ public class RedisVerificationService {
     }
 
     /**
+     * 이메일 인증 코드 검증
+     *
+     * AuthService.verifyCode()에서 호출됨.
+     * 인증 코드가 없거나 일치하지 않으면 실패 횟수를 증가시킨다.
+     */
+    public boolean verifyCode(String email, String code) {
+        if (email == null || code == null || code.trim().isEmpty()) {
+            return false;
+        }
+
+        if (isLocked(email)) {
+            return false;
+        }
+
+        String savedCode = getVerificationCode(email);
+
+        if (savedCode == null || !savedCode.equals(code.trim())) {
+            increaseFailCount(email);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * 이메일 인증 성공 처리
+     *
+     * 인증 완료 상태를 저장하고,
+     * 인증 코드/실패 횟수/잠금/재전송 제한 정보를 삭제한다.
+     */
+    public void markEmailAsVerified(String email) {
+        saveVerifiedEmail(email);
+        clearVerificationState(email);
+    }
+
+    /**
      * 이메일 인증 코드 존재 여부 확인
      */
     public boolean exists(String email) {
