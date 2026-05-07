@@ -39,9 +39,9 @@ public class RegisterRequestDto {
     )
     private String department;
 
-    @NotBlank(message = "입학년도는 필수입니다")
-    @Pattern(regexp = "^(19|20)\\d{2}$",
-            message = "입학년도는 4자리 숫자여야 합니다")
+    @NotNull(message = "입학년도는 필수입니다")
+    @Min(value = 1900, message = "입학년도는 1900년 이상이어야 합니다")
+    @Max(value = 2099, message = "입학년도는 2099년 이하여야 합니다")
     private Integer admissionYear;
 
     @Size(max = 100, message = "자기소개는 100자 이하여야 합니다")
