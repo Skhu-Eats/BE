@@ -2,6 +2,7 @@ package com.skhueats.auth.controller;
 
 import com.skhueats.auth.dto.request.EmailRequest;
 import com.skhueats.auth.dto.request.VerifyCodeRequest;
+import com.skhueats.auth.dto.response.RegisterResponseDto;
 import com.skhueats.auth.service.AuthService;
 import com.skhueats.auth.dto.request.RegisterRequestDto;
 import org.springframework.http.HttpStatus;
@@ -36,11 +37,12 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<Map<String, String>> register(@Valid @RequestBody RegisterRequestDto request) {
-        authService.register(request);
+    public ResponseEntity<RegisterResponseDto> register(@Valid @RequestBody RegisterRequestDto request) {
+        RegisterResponseDto response = authService.register(request);
+
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(Map.of("message", "회원가입 완료"));
+                .body(response);
     }
 }
 

@@ -1,6 +1,7 @@
 package com.skhueats.auth.service;
 
 import com.skhueats.auth.dto.request.RegisterRequestDto;
+import com.skhueats.auth.dto.response.RegisterResponseDto;
 import com.skhueats.global.exception.ApiException;
 import com.skhueats.global.exception.ErrorCode;
 import com.skhueats.user.entity.User;
@@ -65,7 +66,7 @@ public class AuthService {
     }
 
     @Transactional
-    public void register(RegisterRequestDto request) {
+    public RegisterResponseDto register(RegisterRequestDto request) {
         if (request == null) {
             throw new ApiException(ErrorCode.INVALID_REQUEST, "회원가입 요청 정보가 없습니다.");
         }
@@ -100,9 +101,11 @@ public class AuthService {
         user.setPostCount(0);
         user.setJoinCount(0);
 
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
 
         redisVerificationService.consumeVerifiedEmail(email);
+
+        return RegisterResponseDto.from(savedUser);
     }
 
     private String normalizeEmail(String email) {
