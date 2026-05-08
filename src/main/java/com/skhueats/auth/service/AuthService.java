@@ -72,7 +72,8 @@ public class AuthService {
         }
 
         String email = normalizeEmail(request.getEmail());
-        String nickname = request.getNickname().trim();
+        String nickname = normalizeNickname(request.getNickname());
+        String department = normalizeDepartment(request.getDepartment());
         String bio = normalizeBio(request.getBio());
 
         validateSchoolEmail(email);
@@ -93,7 +94,7 @@ public class AuthService {
         user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setNickname(nickname);
-        user.setDepartment(request.getDepartment());
+        user.setDepartment(department);
         user.setAdmissionYear(request.getAdmissionYear());
         user.setBio(bio);
         user.setEmailVerified(true);
@@ -116,12 +117,28 @@ public class AuthService {
         return email.trim().toLowerCase();
     }
 
+    private String normalizeNickname(String nickname) {
+        if (nickname == null || nickname.trim().isEmpty()) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST, "닉네임은 필수입니다.");
+        }
+
+        return nickname.trim();
+    }
+
+    private String normalizeDepartment(String department) {
+        if (department == null || department.trim().isEmpty()) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST, "학과는 필수입니다.");
+        }
+
+        return department.trim();
+    }
+
     private String normalizeBio(String bio) {
-        if (bio != null && bio.trim().isEmpty()) {
+        if (bio == null || bio.trim().isEmpty()) {
             return null;
         }
 
-        return bio;
+        return bio.trim();
     }
 
     private void validateSchoolEmail(String email) {

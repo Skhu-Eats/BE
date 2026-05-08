@@ -3,7 +3,6 @@ package com.skhueats.global.response;
 import com.skhueats.global.exception.ErrorCode;
 import lombok.Builder;
 import lombok.Getter;
-import org.springframework.http.HttpStatus;
 
 @Getter
 @Builder
@@ -17,7 +16,7 @@ public class ErrorResponse {
     public static ErrorResponse of(ErrorCode errorCode, String message, String path) {
         return ErrorResponse.builder()
                 .status(errorCode.getStatus().value())
-                .code(errorCode.name())
+                .code(errorCode.getCode())
                 .message(message)
                 .path(path)
                 .build();
