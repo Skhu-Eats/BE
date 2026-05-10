@@ -2,16 +2,15 @@ package com.skhueats.auth.controller;
 
 import com.skhueats.auth.dto.request.EmailRequest;
 import com.skhueats.auth.dto.request.VerifyCodeRequest;
+import com.skhueats.auth.dto.response.CheckNicknameResponseDto;
 import com.skhueats.auth.dto.response.RegisterResponseDto;
 import com.skhueats.auth.service.AuthService;
 import com.skhueats.auth.dto.request.RegisterRequestDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.Map;
 
 @RestController
@@ -43,6 +42,14 @@ public class AuthController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
+    }
+
+    @GetMapping("/check-nickname")
+    public ResponseEntity<CheckNicknameResponseDto> checkNickname(
+            @RequestParam String nickname
+    ) {
+        CheckNicknameResponseDto response = authService.checkNickname(nickname);
+        return ResponseEntity.ok(response);
     }
 }
 
