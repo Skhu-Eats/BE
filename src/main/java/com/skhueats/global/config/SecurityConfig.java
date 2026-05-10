@@ -28,6 +28,7 @@ public class SecurityConfig {
                                 "/auth/send-code",
                                 "/auth/verify-code",
                                 "/auth/login",
+                                "/auth/check-nickname",
                                 "/error"
                         ).permitAll()
                         .anyRequest().authenticated()
