@@ -40,6 +40,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception e, HttpServletRequest request) {
+        if (request.getRequestURI().startsWith("/v3/api-docs") ||
+                request.getRequestURI().startsWith("/swagger-ui")) {
+            throw new RuntimeException(e);
+        }
         ErrorResponse response = ErrorResponse.of(ErrorCode.INVALID_REQUEST, e.getMessage(), request.getRequestURI());
         return ResponseEntity.status(ErrorCode.INVALID_REQUEST.getStatus()).body(response);
     }
