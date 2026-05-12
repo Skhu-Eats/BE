@@ -1,14 +1,18 @@
 package com.skhueats.auth.controller;
 
 import com.skhueats.auth.dto.request.EmailRequest;
+import com.skhueats.auth.dto.request.LoginRequest;
+import com.skhueats.auth.dto.request.LogoutRequest;
+import com.skhueats.auth.dto.request.RegisterRequestDto;
+import com.skhueats.auth.dto.request.TokenRefreshRequest;
 import com.skhueats.auth.dto.request.VerifyCodeRequest;
 import com.skhueats.auth.dto.response.CheckNicknameResponseDto;
+import com.skhueats.auth.dto.response.LoginResponse;
 import com.skhueats.auth.dto.response.RegisterResponseDto;
 import com.skhueats.auth.service.AuthService;
-import com.skhueats.auth.dto.request.RegisterRequestDto;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -44,6 +48,12 @@ public class AuthController {
                 .body(response);
     }
 
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        LoginResponse response = authService.login(request);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/check-nickname")
     public ResponseEntity<CheckNicknameResponseDto> checkNickname(
             @RequestParam String nickname
@@ -51,5 +61,17 @@ public class AuthController {
         CheckNicknameResponseDto response = authService.checkNickname(nickname);
         return ResponseEntity.ok(response);
     }
-}
 
+
+    @PostMapping("/refresh")
+    public ResponseEntity<LoginResponse> refresh(@Valid @RequestBody TokenRefreshRequest request) {
+        LoginResponse response = authService.refresh(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, String>> logout(@Valid @RequestBody LogoutRequest request) {
+        authService.logout(request);
+        return ResponseEntity.ok(Map.of("message", "로그아웃 완료"));
+    }
+}

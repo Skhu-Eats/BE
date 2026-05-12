@@ -1,17 +1,26 @@
 package com.skhueats.auth.service;
 
+import com.skhueats.auth.dto.request.LoginRequest;
+import com.skhueats.auth.dto.request.LogoutRequest;
 import com.skhueats.auth.dto.request.RegisterRequestDto;
 import com.skhueats.auth.dto.response.CheckNicknameResponseDto;
+import com.skhueats.auth.dto.request.TokenRefreshRequest;
+import com.skhueats.auth.dto.response.LoginResponse;
 import com.skhueats.auth.dto.response.RegisterResponseDto;
+import com.skhueats.auth.entity.RefreshToken;
+import com.skhueats.auth.jwt.JwtTokenProvider;
+import com.skhueats.auth.repository.RefreshTokenRepository;
 import com.skhueats.global.exception.ApiException;
 import com.skhueats.global.exception.ErrorCode;
 import com.skhueats.user.entity.User;
 import com.skhueats.user.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -23,46 +32,50 @@ public class AuthService {
     );
 
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final RedisVerificationService redisVerificationService;
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
+    private final JwtTokenProvider jwtTokenProvider;
+
+    @Value("${jwt.access-token-expiry}")
+    private long accessTokenExpiry;
+
+    @Value("${jwt.refresh-token-expiry}")
+    private long refreshTokenExpiry;
 
     public AuthService(UserRepository userRepository,
+                       RefreshTokenRepository refreshTokenRepository,
                        RedisVerificationService redisVerificationService,
                        PasswordEncoder passwordEncoder,
-                       MailService mailService) {
+                       MailService mailService,
+                       JwtTokenProvider jwtTokenProvider) {
         this.userRepository = userRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
         this.redisVerificationService = redisVerificationService;
         this.passwordEncoder = passwordEncoder;
         this.mailService = mailService;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     public void sendVerificationCode(String email) {
         String normalizedEmail = normalizeEmail(email);
-
         validateSchoolEmail(normalizedEmail);
-
         if (userRepository.existsByEmail(normalizedEmail)) {
             throw new ApiException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
-
         String code = generateVerificationCode();
-
         redisVerificationService.saveVerificationCode(normalizedEmail, code);
         mailService.sendVerificationCode(normalizedEmail, code);
     }
 
     public void verifyCode(String email, String code) {
         String normalizedEmail = normalizeEmail(email);
-
         validateSchoolEmail(normalizedEmail);
-
         boolean verified = redisVerificationService.verifyCode(normalizedEmail, code);
-
         if (!verified) {
             throw new ApiException(ErrorCode.VERIFICATION_CODE_MISMATCH);
         }
-
         redisVerificationService.markEmailAsVerified(normalizedEmail);
     }
 
@@ -71,26 +84,20 @@ public class AuthService {
         if (request == null) {
             throw new ApiException(ErrorCode.INVALID_REQUEST, "회원가입 요청 정보가 없습니다.");
         }
-
         String email = normalizeEmail(request.getEmail());
         String nickname = normalizeNickname(request.getNickname());
         String department = normalizeDepartment(request.getDepartment());
         String bio = normalizeBio(request.getBio());
-
         validateSchoolEmail(email);
-
         if (userRepository.existsByEmail(email)) {
             throw new ApiException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
-
         if (userRepository.existsByNickname(nickname)) {
             throw new ApiException(ErrorCode.NICKNAME_ALREADY_EXISTS);
         }
-
         if (!redisVerificationService.isEmailVerified(email)) {
             throw new ApiException(ErrorCode.EMAIL_NOT_VERIFIED);
         }
-
         User user = new User();
         user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
@@ -102,11 +109,8 @@ public class AuthService {
         user.setMannerScore(0);
         user.setPostCount(0);
         user.setJoinCount(0);
-
         User savedUser = userRepository.save(user);
-
         redisVerificationService.consumeVerifiedEmail(email);
-
         return RegisterResponseDto.from(savedUser);
     }
 
@@ -122,11 +126,76 @@ public class AuthService {
         return new CheckNicknameResponseDto(true, "사용 가능한 닉네임입니다.");
     }
 
+    @Transactional
+    public LoginResponse login(LoginRequest req) {
+        String email = normalizeEmail(req.getEmail());
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(ErrorCode.INVALID_CREDENTIALS));
+        if (!user.isEmailVerified()) {
+            throw new ApiException(ErrorCode.EMAIL_NOT_VERIFIED);
+        }
+        if (!passwordEncoder.matches(req.getPassword(), user.getPasswordHash())) {
+            throw new ApiException(ErrorCode.INVALID_CREDENTIALS);
+        }
+        String accessToken = jwtTokenProvider.generateAccessToken(email);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(email);
+        LocalDateTime expiresAt = LocalDateTime.now()
+                .plusSeconds(refreshTokenExpiry / 1000);
+        refreshTokenRepository.findByEmail(email).ifPresentOrElse(
+                rt -> rt.rotate(refreshToken, expiresAt),
+                () -> refreshTokenRepository.save(
+                        RefreshToken.builder()
+                                .email(email)
+                                .token(refreshToken)
+                                .expiresAt(expiresAt)
+                                .build()
+                )
+        );
+        return LoginResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .expiresIn(accessTokenExpiry / 1000)
+                .nickname(user.getNickname())
+                .userId(user.getId())
+                .build();
+    }
+
+    @Transactional
+    public LoginResponse refresh(TokenRefreshRequest req) {
+        RefreshToken stored = refreshTokenRepository.findByToken(req.getRefreshToken())
+                .orElseThrow(() -> new ApiException(ErrorCode.INVALID_REFRESH_TOKEN));
+        if (stored.isExpired()) {
+            refreshTokenRepository.delete(stored);
+            throw new ApiException(ErrorCode.EXPIRED_REFRESH_TOKEN);
+        }
+        User user = userRepository.findByEmail(stored.getEmail())
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+        String newAccess = jwtTokenProvider.generateAccessToken(user.getEmail());
+        String newRefresh = jwtTokenProvider.generateRefreshToken(user.getEmail());
+        LocalDateTime newExp = LocalDateTime.now().plusSeconds(refreshTokenExpiry / 1000);
+        stored.rotate(newRefresh, newExp);
+        return LoginResponse.builder()
+                .accessToken(newAccess)
+                .refreshToken(newRefresh)
+                .tokenType("Bearer")
+                .expiresIn(accessTokenExpiry / 1000)
+                .nickname(user.getNickname())
+                .userId(user.getId())
+                .build();
+    }
+
+    @Transactional
+    public void logout(LogoutRequest req) {
+        RefreshToken stored = refreshTokenRepository.findByToken(req.getRefreshToken())
+                .orElseThrow(() -> new ApiException(ErrorCode.INVALID_REFRESH_TOKEN));
+        refreshTokenRepository.delete(stored);
+    }
+
     private String normalizeEmail(String email) {
         if (email == null || email.trim().isEmpty()) {
             throw new ApiException(ErrorCode.INVALID_SCHOOL_EMAIL);
         }
-
         return email.trim().toLowerCase();
     }
 
@@ -134,7 +203,6 @@ public class AuthService {
         if (nickname == null || nickname.trim().isEmpty()) {
             throw new ApiException(ErrorCode.INVALID_REQUEST, "닉네임은 필수입니다.");
         }
-
         return nickname.trim();
     }
 
@@ -142,7 +210,6 @@ public class AuthService {
         if (department == null || department.trim().isEmpty()) {
             throw new ApiException(ErrorCode.INVALID_REQUEST, "학과는 필수입니다.");
         }
-
         return department.trim();
     }
 
@@ -150,7 +217,6 @@ public class AuthService {
         if (bio == null || bio.trim().isEmpty()) {
             return null;
         }
-
         return bio.trim();
     }
 
