@@ -3,6 +3,7 @@ package com.skhueats.auth.service;
 import com.skhueats.auth.dto.request.LoginRequest;
 import com.skhueats.auth.dto.request.LogoutRequest;
 import com.skhueats.auth.dto.request.RegisterRequestDto;
+import com.skhueats.auth.dto.response.CheckNicknameResponseDto;
 import com.skhueats.auth.dto.request.TokenRefreshRequest;
 import com.skhueats.auth.dto.response.LoginResponse;
 import com.skhueats.auth.dto.response.RegisterResponseDto;
@@ -111,6 +112,18 @@ public class AuthService {
         User savedUser = userRepository.save(user);
         redisVerificationService.consumeVerifiedEmail(email);
         return RegisterResponseDto.from(savedUser);
+    }
+
+    public CheckNicknameResponseDto checkNickname(String nickname) {
+        String normalizedNickname = normalizeNickname(nickname);
+
+        boolean exists = userRepository.existsByNickname(normalizedNickname);
+
+        if (exists) {
+            return new CheckNicknameResponseDto(false, "이미 사용 중인 닉네임입니다.");
+        }
+
+        return new CheckNicknameResponseDto(true, "사용 가능한 닉네임입니다.");
     }
 
     @Transactional

@@ -6,16 +6,14 @@ import com.skhueats.auth.dto.request.LogoutRequest;
 import com.skhueats.auth.dto.request.RegisterRequestDto;
 import com.skhueats.auth.dto.request.TokenRefreshRequest;
 import com.skhueats.auth.dto.request.VerifyCodeRequest;
+import com.skhueats.auth.dto.response.CheckNicknameResponseDto;
 import com.skhueats.auth.dto.response.LoginResponse;
 import com.skhueats.auth.dto.response.RegisterResponseDto;
 import com.skhueats.auth.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -44,6 +42,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<RegisterResponseDto> register(@Valid @RequestBody RegisterRequestDto request) {
         RegisterResponseDto response = authService.register(request);
+
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
@@ -54,6 +53,15 @@ public class AuthController {
         LoginResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/check-nickname")
+    public ResponseEntity<CheckNicknameResponseDto> checkNickname(
+            @RequestParam String nickname
+    ) {
+        CheckNicknameResponseDto response = authService.checkNickname(nickname);
+        return ResponseEntity.ok(response);
+    }
+
 
     @PostMapping("/refresh")
     public ResponseEntity<LoginResponse> refresh(@Valid @RequestBody TokenRefreshRequest request) {
