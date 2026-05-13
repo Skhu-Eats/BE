@@ -11,9 +11,9 @@
 
 ### 브랜치 네이밍 규칙
 
-- feature/기능명
-    - 예: feature/email-verification
-    - 예: feature/jwt-login
+- 이슈번호-feature/기능명
+    - 예: 1-feature/email-verification
+    - 예: 4-feature/jwt-login
 
 - bug/버그명
     - 예: bug/login-error
@@ -57,14 +57,14 @@ git checkout -b feature/email-verification
 ---
 
 ###  작성 규칙
-- 타입: 작업 내용 (#이슈번호)
+- [#이슈번호] 타입: 작업 내용
 - 예시
 ```bash
 git commit -m "init: 프로젝트 초기 세팅"
 
-git commit -m "feat: 이메일 인증 API 구현 (#12)"
+git commit -m "[#12] feat: 이메일 인증 API 구현"
 
-git commit -m "fix: 로그인 시 토큰 오류 수정 (#15)"
+git commit -m "[#15] fix: 로그인 시 토큰 오류 수정"
 
 git commit -m "refactor: UserService 코드 구조 개선"
 
