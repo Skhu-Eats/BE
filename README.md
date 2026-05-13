@@ -11,9 +11,9 @@
 
 ### 브랜치 네이밍 규칙
 
-- 이슈번호-feature/기능명
-    - 예: 1-feature/email-verification
-    - 예: 4-feature/jwt-login
+- feature/이슈번호-기능명
+    - 예: feature/1-email-verification
+    - 예: feature/4-jwt-login
 
 - bug/버그명
     - 예: bug/login-error
