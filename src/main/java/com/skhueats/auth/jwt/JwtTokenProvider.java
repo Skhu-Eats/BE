@@ -57,6 +57,18 @@ public class JwtTokenProvider {
         return false;
     }
 
+    public boolean isExpiredToken(String token) {
+        try {
+            parseClaims(token);
+            return false;
+        } catch (ExpiredJwtException e) {
+            log.debug("만료된 JWT: {}", e.getMessage());
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
     private Claims parseClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
