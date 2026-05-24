@@ -2,6 +2,7 @@ package com.skhueats.user.service;
 
 import com.skhueats.auth.dto.request.RegisterRequestDto;
 import com.skhueats.auth.service.RedisVerificationService;
+import com.skhueats.user.dto.response.MyProfileResponseDto;
 import com.skhueats.global.exception.ApiException;
 import com.skhueats.global.exception.ErrorCode;
 import com.skhueats.user.entity.User;
@@ -87,5 +88,12 @@ public class UserService {
 
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    @Transactional(readOnly = true)
+    public MyProfileResponseDto getMyProfile() {
+        User user = getCurrentAuthenticatedUser();
+
+        return MyProfileResponseDto.from(user);
     }
 }
