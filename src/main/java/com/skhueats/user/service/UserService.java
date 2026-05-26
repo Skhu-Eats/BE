@@ -1,6 +1,7 @@
 package com.skhueats.user.service;
 
 import com.skhueats.auth.dto.request.RegisterRequestDto;
+import com.skhueats.auth.repository.RefreshTokenRepository;
 import com.skhueats.auth.service.RedisVerificationService;
 import com.skhueats.global.exception.ApiException;
 import com.skhueats.global.exception.ErrorCode;
@@ -8,6 +9,7 @@ import com.skhueats.user.entity.User;
 import com.skhueats.user.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserService {
@@ -18,13 +20,16 @@ public class UserService {
     );
 
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final RedisVerificationService redisVerificationService;
     private final PasswordEncoder passwordEncoder;
 
     public UserService(UserRepository userRepository,
+                       RefreshTokenRepository refreshTokenRepository,
                        RedisVerificationService redisVerificationService,
                        PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
         this.redisVerificationService = redisVerificationService;
         this.passwordEncoder = passwordEncoder;
     }
@@ -36,7 +41,7 @@ public class UserService {
 
         String email = request.getEmail();
 
-        if (SCHOOL_DOMAINS.stream().noneMatch(email::endsWith)) {
+            if (SCHOOL_DOMAINS.stream().noneMatch(email::endsWith)) {
             throw new ApiException(ErrorCode.INVALID_SCHOOL_EMAIL);
         }
 
@@ -66,5 +71,13 @@ public class UserService {
 
         userRepository.save(user);
         redisVerificationService.consumeVerifiedEmail(email);
+    }
+
+    @Transactional
+    public void deleteAccount(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+        refreshTokenRepository.deleteByEmail(email);
+        userRepository.delete(user);
     }
 }
