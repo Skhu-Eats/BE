@@ -6,6 +6,7 @@ import com.skhueats.user.dto.response.MyProfileResponseDto;
 import com.skhueats.global.exception.ApiException;
 import com.skhueats.global.exception.ErrorCode;
 import com.skhueats.user.entity.User;
+import com.skhueats.user.CustomUserDetails;
 import com.skhueats.user.repository.UserRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -80,14 +81,19 @@ public class UserService {
             throw new ApiException(ErrorCode.INVALID_TOKEN);
         }
 
-        String email = authentication.getName();
+        Object principal = authentication.getPrincipal();
 
-        if (email == null || email.isBlank() || "anonymousUser".equals(email)) {
+        if (!(principal instanceof CustomUserDetails customUserDetails)) {
             throw new ApiException(ErrorCode.INVALID_TOKEN);
         }
 
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+        User user = customUserDetails.getUser();
+
+        if (user == null) {
+            throw new ApiException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        return user;
     }
 
     @Transactional(readOnly = true)
