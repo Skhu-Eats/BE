@@ -3,6 +3,8 @@ package com.skhueats.auth.jwt;
 import com.skhueats.global.exception.ErrorCode;
 import com.skhueats.global.security.SecurityErrorResponseWriter;
 import com.skhueats.user.CustomUserDetailsService;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,16 +43,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (jwtTokenProvider.isExpiredToken(token)) {
-            securityErrorResponseWriter.write(request, response, ErrorCode.EXPIRED_TOKEN);
-            return;
-        }
-
-        if (!jwtTokenProvider.validateToken(token)) {
-            securityErrorResponseWriter.write(request, response, ErrorCode.INVALID_TOKEN);
-            return;
-        }
-
         try {
             String email = jwtTokenProvider.getEmailFromToken(token);
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
@@ -65,10 +57,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(auth);
 
-            filterChain.doFilter(request, response);
+        } catch (ExpiredJwtException e) {
+            securityErrorResponseWriter.write(request, response, ErrorCode.EXPIRED_TOKEN);
+            return;
+        } catch (JwtException | IllegalArgumentException e) {
+            securityErrorResponseWriter.write(request, response, ErrorCode.INVALID_TOKEN);
+            return;
         } catch (UsernameNotFoundException e) {
             securityErrorResponseWriter.write(request, response, ErrorCode.USER_NOT_FOUND);
+            return;
         }
+
+        filterChain.doFilter(request, response);
     }
 
     private String resolveToken(HttpServletRequest request) {
