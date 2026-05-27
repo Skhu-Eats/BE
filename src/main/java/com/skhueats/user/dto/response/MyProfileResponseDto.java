@@ -13,6 +13,10 @@ public class MyProfileResponseDto {
     private String nickname;
 
     public static MyProfileResponseDto from(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User must not be null");
+        }
+
         return MyProfileResponseDto.builder()
                 .userId(user.getId())
                 .email(user.getEmail())
