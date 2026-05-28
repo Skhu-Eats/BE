@@ -2,12 +2,17 @@ package com.skhueats.user.service;
 
 import com.skhueats.auth.dto.request.RegisterRequestDto;
 import com.skhueats.auth.service.RedisVerificationService;
+import com.skhueats.user.dto.response.MyProfileResponseDto;
 import com.skhueats.global.exception.ApiException;
 import com.skhueats.global.exception.ErrorCode;
 import com.skhueats.user.entity.User;
+import com.skhueats.user.CustomUserDetails;
 import com.skhueats.user.repository.UserRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserService {
@@ -66,5 +71,35 @@ public class UserService {
 
         userRepository.save(user);
         redisVerificationService.consumeVerifiedEmail(email);
+    }
+
+    @Transactional(readOnly = true)
+    public User getCurrentAuthenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new ApiException(ErrorCode.INVALID_TOKEN);
+        }
+
+        Object principal = authentication.getPrincipal();
+
+        if (!(principal instanceof CustomUserDetails customUserDetails)) {
+            throw new ApiException(ErrorCode.INVALID_TOKEN);
+        }
+
+        User user = customUserDetails.getUser();
+
+        if (user == null) {
+            throw new ApiException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        return user;
+    }
+
+    @Transactional(readOnly = true)
+    public MyProfileResponseDto getMyProfile() {
+        User user = getCurrentAuthenticatedUser();
+
+        return MyProfileResponseDto.from(user);
     }
 }

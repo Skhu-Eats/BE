@@ -13,6 +13,7 @@ public enum ErrorCode {
     VERIFICATION_ATTEMPT_LOCKED(HttpStatus.TOO_MANY_REQUESTS, "AUTH_429_LOCK", "인증 실패 횟수를 초과했습니다. 10분 후 다시 시도해주세요."),
     VERIFICATION_RESEND_BLOCKED(HttpStatus.TOO_MANY_REQUESTS, "AUTH_429_RESEND", "인증 메일은 1분 후 다시 요청할 수 있습니다."),
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "AUTH_401", "이메일 또는 비밀번호가 올바르지 않습니다."),
+    ACCESS_TOKEN_REQUIRED(HttpStatus.UNAUTHORIZED, "AUTH_401_TOKEN_REQUIRED", "Access Token이 필요합니다."),
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_401_TOKEN", "유효하지 않은 토큰입니다."),
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_401_EXPIRED", "만료된 토큰입니다."),
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_401_REFRESH", "유효하지 않은 Refresh Token입니다."),
