@@ -12,5 +12,5 @@ public class LoginResponse {
     private String tokenType;
     private Long expiresIn;
     private String nickname;
-    private String userId;
+    private Long userId;
 }

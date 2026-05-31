@@ -9,7 +9,7 @@ import lombok.Getter;
 public class RegisterResponseDto {
 
     private String message;
-    private String userId;
+    private Long userId;
     private String email;
     private String nickname;
     private String department;
@@ -20,12 +20,13 @@ public class RegisterResponseDto {
     public static RegisterResponseDto from(User user) {
         return new RegisterResponseDto(
                 "회원가입 완료",
-                user.getId().toString(),
+                user.getId(),
                 user.getEmail(),
                 user.getNickname(),
                 user.getDepartment(),
                 user.getAdmissionYear(),
                 user.getBio(),
                 user.isEmailVerified()
-        );    }
+        );
+    }
 }

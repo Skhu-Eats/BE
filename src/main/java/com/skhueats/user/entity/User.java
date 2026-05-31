@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "users")
@@ -14,8 +13,8 @@ import java.util.UUID;
 public class User {
 
     @Id
-    @Column(length = 36)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column(nullable = false, unique = true, length = 255)
     private String email;
@@ -32,7 +31,7 @@ public class User {
     @Column(nullable = false, length = 50)
     private String department;
 
-    @Column(name = "admission_year", nullable = false, length = 10)
+    @Column(name = "admission_year", nullable = false)
     private Integer admissionYear;
 
     @Column(length = 255)
@@ -53,14 +52,26 @@ public class User {
     @Column(name = "join_count", nullable = false)
     private Integer joinCount;
 
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
     @PrePersist
     public void prePersist() {
-        if (this.id == null) {
-            this.id = UUID.randomUUID().toString();
-        }
-
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+
+        if (this.mannerScore == null) {
+            this.mannerScore = 0;
+        }
+
+        if (this.postCount == null) {
+            this.postCount = 0;
+        }
+
+        if (this.joinCount == null) {
+            this.joinCount = 0;
+        }
     }
 
     @PreUpdate
