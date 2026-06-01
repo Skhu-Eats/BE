@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "users")
@@ -13,8 +14,7 @@ import java.time.LocalDateTime;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
     @Column(nullable = false, unique = true, length = 255)
     private String email;
@@ -31,7 +31,7 @@ public class User {
     @Column(nullable = false, length = 50)
     private String department;
 
-    @Column(name = "admission_year", nullable = false)
+    @Column(name = "admission_year", nullable = false, length = 10)
     private Integer admissionYear;
 
     @Column(length = 255)
@@ -44,13 +44,13 @@ public class User {
     private LocalDateTime updatedAt;
 
     @Column(name = "manner_score", nullable = false)
-    private Integer mannerScore;
+    private Integer mannerScore = 0;
 
     @Column(name = "post_count", nullable = false)
-    private Integer postCount;
+    private Integer postCount = 0;
 
     @Column(name = "join_count", nullable = false)
-    private Integer joinCount;
+    private Integer joinCount = 0;
 
     public void updateNickname(String nickname) {
         this.nickname = nickname;
@@ -58,20 +58,12 @@ public class User {
 
     @PrePersist
     public void prePersist() {
+        if (this.id == null) {
+            this.id = UUID.randomUUID().toString();
+        }
+
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
-
-        if (this.mannerScore == null) {
-            this.mannerScore = 0;
-        }
-
-        if (this.postCount == null) {
-            this.postCount = 0;
-        }
-
-        if (this.joinCount == null) {
-            this.joinCount = 0;
-        }
     }
 
     @PreUpdate

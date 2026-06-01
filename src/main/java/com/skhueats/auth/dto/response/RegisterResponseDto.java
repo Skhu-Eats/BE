@@ -9,7 +9,7 @@ import lombok.Getter;
 public class RegisterResponseDto {
 
     private String message;
-    private Long userId;
+    private String userId;
     private String email;
     private String nickname;
     private String department;

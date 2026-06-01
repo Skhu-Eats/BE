@@ -10,7 +10,7 @@ public class LoginResponse {
     private String accessToken;
     private String refreshToken;
     private String tokenType;
-    private Long expiresIn;
+    private long expiresIn;
     private String nickname;
-    private Long userId;
+    private String userId;
 }

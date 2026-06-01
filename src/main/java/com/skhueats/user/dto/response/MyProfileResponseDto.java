@@ -8,7 +8,7 @@ import lombok.Getter;
 @Builder
 public class MyProfileResponseDto {
 
-    private Long userId;
+    private String userId;
     private String email;
     private String nickname;
 
