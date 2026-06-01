@@ -20,12 +20,13 @@ public class RegisterResponseDto {
     public static RegisterResponseDto from(User user) {
         return new RegisterResponseDto(
                 "회원가입 완료",
-                user.getId().toString(),
+                user.getId(),
                 user.getEmail(),
                 user.getNickname(),
                 user.getDepartment(),
                 user.getAdmissionYear(),
                 user.getBio(),
                 user.isEmailVerified()
-        );    }
+        );
+    }
 }

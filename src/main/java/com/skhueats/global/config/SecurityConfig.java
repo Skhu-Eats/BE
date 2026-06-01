@@ -42,14 +42,15 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/auth/check-nickname"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/users/me").authenticated()
                         .anyRequest().authenticated()
                 )
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)
-                .addFilterBefore(jwtAuthenticationFilter,
-                        UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                );
 
         return http.build();
     }

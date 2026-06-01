@@ -1,105 +1,71 @@
 package com.skhueats.user.service;
 
-import com.skhueats.auth.dto.request.RegisterRequestDto;
-import com.skhueats.auth.service.RedisVerificationService;
-import com.skhueats.user.dto.response.MyProfileResponseDto;
 import com.skhueats.global.exception.ApiException;
 import com.skhueats.global.exception.ErrorCode;
+import com.skhueats.user.dto.request.UpdateMyProfileRequestDto;
+import com.skhueats.user.dto.response.MyProfileResponseDto;
 import com.skhueats.user.entity.User;
-import com.skhueats.user.CustomUserDetails;
 import com.skhueats.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class UserService {
 
-    private static final java.util.List<String> SCHOOL_DOMAINS = java.util.List.of(
-            "@skhu.ac.kr",
-            "@office.skhu.ac.kr"
-    );
-
     private final UserRepository userRepository;
-    private final RedisVerificationService redisVerificationService;
-    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository,
-                       RedisVerificationService redisVerificationService,
-                       PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.redisVerificationService = redisVerificationService;
-        this.passwordEncoder = passwordEncoder;
+    public MyProfileResponseDto getMyProfile() {
+        String email = getCurrentUserEmail();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+
+        return MyProfileResponseDto.from(user);
     }
 
-    public void register(RegisterRequestDto request) {
-        if (request == null) {
-            throw new ApiException(ErrorCode.INVALID_REQUEST, "회원가입 요청 정보가 없습니다.");
+    @Transactional
+    public MyProfileResponseDto updateMyProfile(UpdateMyProfileRequestDto requestDto) {
+        String email = getCurrentUserEmail();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+
+        String newNickname = requestDto.nickname();
+        String currentNickname = user.getNickname();
+
+        if (!currentNickname.equals(newNickname)) {
+            validateNicknameDuplicate(newNickname);
+            user.updateNickname(newNickname);
         }
 
-        String email = request.getEmail();
-
-        if (SCHOOL_DOMAINS.stream().noneMatch(email::endsWith)) {
-            throw new ApiException(ErrorCode.INVALID_SCHOOL_EMAIL);
-        }
-
-        if (userRepository.existsByEmail(email)) {
-            throw new ApiException(ErrorCode.EMAIL_ALREADY_EXISTS);
-        }
-
-        if (userRepository.existsByNickname(request.getNickname())) {
-            throw new ApiException(ErrorCode.NICKNAME_ALREADY_EXISTS);
-        }
-
-        if (!redisVerificationService.isEmailVerified(email)) {
-            throw new ApiException(ErrorCode.EMAIL_NOT_VERIFIED);
-        }
-
-        User user = new User();
-        user.setEmail(email);
-        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        user.setNickname(request.getNickname());
-        user.setDepartment(request.getDepartment());
-        user.setAdmissionYear(request.getAdmissionYear());
-        user.setBio(request.getBio());
-        user.setEmailVerified(true);
-        user.setMannerScore(0);
-        user.setPostCount(0);
-        user.setJoinCount(0);
-
-        userRepository.save(user);
-        redisVerificationService.consumeVerifiedEmail(email);
+        return MyProfileResponseDto.from(user);
     }
 
-    @Transactional(readOnly = true)
-    public User getCurrentAuthenticatedUser() {
+    private String getCurrentUserEmail() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new ApiException(ErrorCode.INVALID_TOKEN);
+            throw new ApiException(ErrorCode.ACCESS_TOKEN_REQUIRED);
         }
 
         Object principal = authentication.getPrincipal();
 
-        if (!(principal instanceof CustomUserDetails customUserDetails)) {
-            throw new ApiException(ErrorCode.INVALID_TOKEN);
+        if (principal instanceof UserDetails userDetails) {
+            return userDetails.getUsername();
         }
 
-        User user = customUserDetails.getUser();
-
-        if (user == null) {
-            throw new ApiException(ErrorCode.USER_NOT_FOUND);
-        }
-
-        return user;
+        throw new ApiException(ErrorCode.ACCESS_TOKEN_REQUIRED);
     }
 
-    @Transactional(readOnly = true)
-    public MyProfileResponseDto getMyProfile() {
-        User user = getCurrentAuthenticatedUser();
-
-        return MyProfileResponseDto.from(user);
+    private void validateNicknameDuplicate(String nickname) {
+        if (userRepository.existsByNickname(nickname)) {
+            throw new ApiException(ErrorCode.NICKNAME_ALREADY_EXISTS);
+        }
     }
 }

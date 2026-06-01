@@ -70,15 +70,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String email = jwtTokenProvider.getEmailFromToken(token);
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-            UsernamePasswordAuthenticationToken auth =
+            UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,
                             userDetails.getAuthorities()
                     );
 
-            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(auth);
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
         } catch (ExpiredJwtException e) {
             securityErrorResponseWriter.write(request, response, ErrorCode.EXPIRED_TOKEN);
