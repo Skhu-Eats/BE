@@ -36,7 +36,7 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
 
-        String newNickname = requestDto.normalizedNickname();
+        String newNickname = requestDto.nickname();
         String currentNickname = user.getNickname();
 
         if (!currentNickname.equals(newNickname)) {
@@ -58,10 +58,6 @@ public class UserService {
 
         if (principal instanceof UserDetails userDetails) {
             return userDetails.getUsername();
-        }
-
-        if (principal instanceof String email && !"anonymousUser".equals(email)) {
-            return email;
         }
 
         throw new ApiException(ErrorCode.ACCESS_TOKEN_REQUIRED);

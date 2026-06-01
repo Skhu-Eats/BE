@@ -15,7 +15,4 @@ public record UpdateMyProfileRequestDto(
         String nickname
 
 ) {
-    public String normalizedNickname() {
-        return nickname.trim();
-    }
 }
