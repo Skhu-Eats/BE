@@ -1,11 +1,16 @@
 package com.skhueats.auth.jwt;
 
+import com.skhueats.global.exception.ErrorCode;
+import com.skhueats.global.security.SecurityErrorResponseWriter;
 import com.skhueats.user.CustomUserDetailsService;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,6 +21,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -23,6 +29,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService userDetailsService;
+    private final SecurityErrorResponseWriter securityErrorResponseWriter;
+
+    private static final List<String> PUBLIC_PATHS = List.of(
+            "/auth/register",
+            "/auth/send-code",
+            "/auth/verify-code",
+            "/auth/login",
+            "/auth/refresh",
+            "/auth/logout",
+            "/auth/check-nickname",
+            "/error"
+    );
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+
+        return HttpMethod.OPTIONS.matches(request.getMethod())
+                || PUBLIC_PATHS.contains(path)
+                || path.startsWith("/swagger-ui")
+                || path.startsWith("/v3/api-docs");
+    }
 
     @Override
     protected void doFilterInternal(
@@ -33,20 +61,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = resolveToken(request);
 
-        if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
-            String email = jwtTokenProvider.getEmailFromToken(token);
-            try {
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+        if (!StringUtils.hasText(token)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails, null, userDetails.getAuthorities()
-                        );
-                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(auth);
-            } catch (UsernameNotFoundException e) {
-                // 탈퇴 등으로 유저가 존재하지 않으면 인증하지 않고 통과 → Security가 401 반환
-            }
+        try {
+            String email = jwtTokenProvider.getEmailFromToken(token);
+            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities()
+                    );
+
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        } catch (ExpiredJwtException e) {
+            securityErrorResponseWriter.write(request, response, ErrorCode.EXPIRED_TOKEN);
+            return;
+        } catch (JwtException | IllegalArgumentException e) {
+            securityErrorResponseWriter.write(request, response, ErrorCode.INVALID_TOKEN);
+            return;
+        } catch (UsernameNotFoundException e) {
+            securityErrorResponseWriter.write(request, response, ErrorCode.USER_NOT_FOUND);
+            return;
         }
 
         filterChain.doFilter(request, response);
@@ -54,9 +96,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private String resolveToken(HttpServletRequest request) {
         String bearer = request.getHeader("Authorization");
+
         if (StringUtils.hasText(bearer) && bearer.startsWith("Bearer ")) {
             return bearer.substring(7);
         }
+
         return null;
     }
 }

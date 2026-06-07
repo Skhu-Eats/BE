@@ -14,7 +14,6 @@ import java.util.UUID;
 public class User {
 
     @Id
-    @Column(length = 36)
     private String id;
 
     @Column(nullable = false, unique = true, length = 255)
@@ -45,13 +44,17 @@ public class User {
     private LocalDateTime updatedAt;
 
     @Column(name = "manner_score", nullable = false)
-    private Integer mannerScore;
+    private Integer mannerScore = 0;
 
     @Column(name = "post_count", nullable = false)
-    private Integer postCount;
+    private Integer postCount = 0;
 
     @Column(name = "join_count", nullable = false)
-    private Integer joinCount;
+    private Integer joinCount = 0;
+
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
+    }
 
     @PrePersist
     public void prePersist() {
