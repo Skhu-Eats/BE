@@ -1,5 +1,6 @@
 package com.skhueats.user.service;
 
+import com.skhueats.auth.repository.RefreshTokenRepository;
 import com.skhueats.global.exception.ApiException;
 import com.skhueats.global.exception.ErrorCode;
 import com.skhueats.user.dto.request.UpdateMyProfileRequestDto;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     public MyProfileResponseDto getMyProfile() {
         String email = getCurrentUserEmail();
@@ -45,6 +47,17 @@ public class UserService {
         }
 
         return MyProfileResponseDto.from(user);
+    }
+
+    @Transactional
+    public void deleteAccount() {
+        String email = getCurrentUserEmail();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+
+        refreshTokenRepository.deleteByEmail(email);
+        userRepository.delete(user);
     }
 
     private String getCurrentUserEmail() {
