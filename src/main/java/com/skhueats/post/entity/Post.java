@@ -86,14 +86,6 @@ public class Post {
 
         LocalDateTime now = LocalDateTime.now();
 
-        if (this.createdAt == null) {
-            this.createdAt = now;
-        }
-
-        if (this.updatedAt == null) {
-            this.updatedAt = now;
-        }
-
         if (this.deadline == null) {
             this.deadline = this.meetingTime;
         }
@@ -104,6 +96,14 @@ public class Post {
 
         if (this.status == null) {
             this.status = PostStatus.OPEN;
+        }
+
+        if (this.createdAt == null) {
+            this.createdAt = now;
+        }
+
+        if (this.updatedAt == null) {
+            this.updatedAt = now;
         }
     }
 
