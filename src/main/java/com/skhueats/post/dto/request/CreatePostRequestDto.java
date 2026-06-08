@@ -1,12 +1,7 @@
 package com.skhueats.post.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -22,6 +17,7 @@ public class CreatePostRequestDto {
     private String title;
 
     @JsonProperty("food_categories")
+    @NotEmpty(message = "음식 카테고리는 1개 이상 선택해야 합니다.")
     private List<
             @NotBlank(message = "음식 카테고리는 빈 값일 수 없습니다.")
             @Size(max = 30, message = "음식 카테고리는 30자 이하여야 합니다.")
