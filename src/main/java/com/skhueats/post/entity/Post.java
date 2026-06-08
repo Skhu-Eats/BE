@@ -23,8 +23,8 @@ public class Post {
     @JoinColumn(name = "host_id", nullable = false)
     private User host;
 
-    @Column(name = "menu", nullable = false, length = 100)
-    private String menu;
+    @Column(name = "title", nullable = false, length = 100)
+    private String title;
 
     @Column(name = "location", nullable = false, length = 100)
     private String location;
@@ -44,7 +44,7 @@ public class Post {
     @Column(name = "memo", length = 255)
     private String memo;
 
-    @Column(name = "kakao_link", length = 500)
+    @Column(name = "kakao_link", nullable = false, length = 500)
     private String kakaoLink;
 
     @Enumerated(EnumType.STRING)
@@ -59,7 +59,7 @@ public class Post {
 
     public Post(
             User host,
-            String menu,
+            String title,
             String location,
             LocalDateTime meetingTime,
             Integer maxParticipants,
@@ -67,7 +67,7 @@ public class Post {
             String kakaoLink
     ) {
         this.host = host;
-        this.menu = menu;
+        this.title = title;
         this.location = location;
         this.meetingTime = meetingTime;
         this.deadline = meetingTime;
