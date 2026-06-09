@@ -57,6 +57,7 @@ public class PostService {
         postFoodCategoryRepository.saveAll(postFoodCategories);
 
         user.increasePostCount();
+        userRepository.save(user);
 
         return CreatePostResponseDto.of(savedPost, foodCategories);
     }
