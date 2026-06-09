@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
@@ -24,6 +25,7 @@ import java.util.List;
 public class PostService {
 
     private static final int DAILY_POST_LIMIT = 3;
+    private static final ZoneId KST_ZONE = ZoneId.of("Asia/Seoul");
 
     private final PostRepository postRepository;
     private final PostFoodCategoryRepository postFoodCategoryRepository;
@@ -57,18 +59,17 @@ public class PostService {
         postFoodCategoryRepository.saveAll(postFoodCategories);
 
         user.increasePostCount();
-        userRepository.save(user);
 
         return CreatePostResponseDto.of(savedPost, foodCategories);
     }
 
     private void validateDailyPostLimit(User user) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(KST_ZONE);
 
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime startOfNextDay = today.plusDays(1).atStartOfDay();
 
-        long todayPostCount = postRepository.countByHostAndCreatedAtBetween(
+        long todayPostCount = postRepository.countByHostAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
                 user,
                 startOfDay,
                 startOfNextDay

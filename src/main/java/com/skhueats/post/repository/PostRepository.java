@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 public interface PostRepository extends JpaRepository<Post, String> {
 
-    long countByHostAndCreatedAtBetween(
+    long countByHostAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
             User host,
             LocalDateTime start,
             LocalDateTime end

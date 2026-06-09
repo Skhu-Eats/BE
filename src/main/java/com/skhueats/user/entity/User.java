@@ -72,6 +72,10 @@ public class User {
     }
 
     public void increasePostCount() {
+        if (this.postCount == null) {
+            this.postCount = 0;
+        }
+
         this.postCount++;
     }
 }

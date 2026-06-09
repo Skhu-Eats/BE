@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 
 @Entity
@@ -14,6 +15,8 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Post {
+
+    private static final ZoneId KST_ZONE = ZoneId.of("Asia/Seoul");
 
     @Id
     @Column(name = "id", columnDefinition = "CHAR(36)", nullable = false, updatable = false)
@@ -84,7 +87,7 @@ public class Post {
             this.id = UUID.randomUUID().toString();
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(KST_ZONE);
 
         if (this.deadline == null) {
             this.deadline = this.meetingTime;
@@ -109,6 +112,6 @@ public class Post {
 
     @PreUpdate
     public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now(KST_ZONE);
     }
 }
