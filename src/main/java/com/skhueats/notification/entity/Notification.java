@@ -16,7 +16,7 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Notification {
 
-    private static final ZoneId KST_ZONE = ZoneId.of("Asia/Seoul");
+    public static final ZoneId KST_ZONE = ZoneId.of("Asia/Seoul");
 
     @Id
     @Column(name = "id", columnDefinition = "CHAR(36)", nullable = false, updatable = false)
