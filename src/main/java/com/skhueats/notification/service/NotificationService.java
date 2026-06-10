@@ -2,6 +2,8 @@ package com.skhueats.notification.service;
 
 import com.skhueats.global.exception.ApiException;
 import com.skhueats.global.exception.ErrorCode;
+import com.skhueats.global.util.DateTimeUtils;
+import com.skhueats.notification.dto.response.NotificationPageResponseDto;
 import com.skhueats.notification.dto.response.NotificationResponseDto;
 import com.skhueats.notification.entity.Notification;
 import com.skhueats.notification.entity.NotificationType;
@@ -9,25 +11,31 @@ import com.skhueats.notification.repository.NotificationRepository;
 import com.skhueats.user.entity.User;
 import com.skhueats.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class NotificationService {
 
+    private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final int MAX_PAGE_SIZE = 50;
+
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
 
-    public List<NotificationResponseDto> getNotifications(String email) {
+    public NotificationPageResponseDto getNotifications(String email, int page, int size) {
         User recipient = findUserByEmail(email);
+        PageRequest pageRequest = PageRequest.of(normalizePage(page), normalizeSize(size));
 
-        return notificationRepository.findByRecipientOrderByCreatedAtDesc(recipient).stream()
-                .map(NotificationResponseDto::from)
-                .toList();
+        Page<NotificationResponseDto> notifications = notificationRepository
+                .findByRecipientOrderByCreatedAtDescIdDesc(recipient, pageRequest)
+                .map(NotificationResponseDto::from);
+
+        return NotificationPageResponseDto.from(notifications);
     }
 
     @Transactional
@@ -45,11 +53,10 @@ public class NotificationService {
     @Transactional
     public int markAllAsRead(String email) {
         User recipient = findUserByEmail(email);
-        List<Notification> unreadNotifications = notificationRepository.findByRecipientAndReadFalse(recipient);
-
-        unreadNotifications.forEach(Notification::markAsRead);
-
-        return unreadNotifications.size();
+        return notificationRepository.markAllAsReadByRecipient(
+                recipient,
+                DateTimeUtils.nowInKst()
+        );
     }
 
     @Transactional
@@ -68,5 +75,17 @@ public class NotificationService {
     private User findUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    private int normalizePage(int page) {
+        return Math.max(page, 0);
+    }
+
+    private int normalizeSize(int size) {
+        if (size <= 0) {
+            return DEFAULT_PAGE_SIZE;
+        }
+
+        return Math.min(size, MAX_PAGE_SIZE);
     }
 }

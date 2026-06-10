@@ -1,5 +1,6 @@
 package com.skhueats.notification.entity;
 
+import com.skhueats.global.util.DateTimeUtils;
 import com.skhueats.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -7,7 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.UUID;
 
 @Entity
@@ -15,8 +15,6 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Notification {
-
-    private static final ZoneId KST_ZONE = ZoneId.of("Asia/Seoul");
 
     @Id
     @Column(name = "id", columnDefinition = "CHAR(36)", nullable = false, updatable = false)
@@ -85,7 +83,7 @@ public class Notification {
         }
 
         this.read = true;
-        this.readAt = LocalDateTime.now(KST_ZONE);
+        this.readAt = DateTimeUtils.nowInKst();
     }
 
     @PrePersist
@@ -95,7 +93,7 @@ public class Notification {
         }
 
         if (this.createdAt == null) {
-            this.createdAt = LocalDateTime.now(KST_ZONE);
+            this.createdAt = DateTimeUtils.nowInKst();
         }
     }
 }

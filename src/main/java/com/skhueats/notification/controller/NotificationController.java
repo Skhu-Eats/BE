@@ -1,6 +1,7 @@
 package com.skhueats.notification.controller;
 
 import com.skhueats.notification.dto.response.NotificationReadAllResponseDto;
+import com.skhueats.notification.dto.response.NotificationPageResponseDto;
 import com.skhueats.notification.dto.response.NotificationResponseDto;
 import com.skhueats.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -11,9 +12,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/notifications")
@@ -23,10 +23,16 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @GetMapping
-    public ResponseEntity<List<NotificationResponseDto>> getNotifications(
-            @AuthenticationPrincipal UserDetails userDetails
+    public ResponseEntity<NotificationPageResponseDto> getNotifications(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
     ) {
-        List<NotificationResponseDto> response = notificationService.getNotifications(userDetails.getUsername());
+        NotificationPageResponseDto response = notificationService.getNotifications(
+                userDetails.getUsername(),
+                page,
+                size
+        );
         return ResponseEntity.ok(response);
     }
 
