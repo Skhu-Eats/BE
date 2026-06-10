@@ -3,27 +3,39 @@ package com.skhueats.user.dto.response;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.skhueats.user.entity.User;
-import lombok.Builder;
-import lombok.Getter;
 
-@Getter
-@Builder
+import java.util.List;
+
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class MyProfileResponseDto {
+public record MyProfileResponseDto(
 
-    private String userId;
-    private String email;
-    private String nickname;
+        String userId,
 
-    public static MyProfileResponseDto from(User user) {
-        if (user == null) {
-            throw new IllegalArgumentException("User must not be null");
-        }
+        String email,
 
-        return MyProfileResponseDto.builder()
-                .userId(user.getId())
-                .email(user.getEmail())
-                .nickname(user.getNickname())
-                .build();
+        String nickname,
+
+        String department,
+
+        Integer admissionYear,
+
+        String bio,
+
+        List<String> foodCategories,
+
+        String avatar
+) {
+
+    public static MyProfileResponseDto from(User user, List<String> foodCategories) {
+        return new MyProfileResponseDto(
+                user.getId(),
+                user.getEmail(),
+                user.getNickname(),
+                user.getDepartment(),
+                user.getAdmissionYear(),
+                user.getBio(),
+                foodCategories,
+                null
+        );
     }
 }

@@ -6,6 +6,8 @@ import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
@@ -49,4 +51,12 @@ public class RegisterRequestDto {
 
     @Size(max = 100, message = "자기소개는 100자 이하여야 합니다")
     private String bio;
+
+    @NotEmpty(message = "선호 음식 카테고리는 1개 이상 선택해야 합니다")
+    @Size(max = 10, message = "선호 음식 카테고리는 최대 10개까지 선택할 수 있습니다")
+    private List<
+            @NotBlank(message = "선호 음식 카테고리는 빈 값일 수 없습니다")
+            @Size(max = 30, message = "선호 음식 카테고리는 30자 이하여야 합니다")
+                    String
+            > foodCategories;
 }
