@@ -2,6 +2,7 @@ package com.skhueats.notification.service;
 
 import com.skhueats.global.exception.ApiException;
 import com.skhueats.global.exception.ErrorCode;
+import com.skhueats.global.util.DateTimeUtils;
 import com.skhueats.notification.dto.response.NotificationPageResponseDto;
 import com.skhueats.notification.dto.response.NotificationResponseDto;
 import com.skhueats.notification.entity.Notification;
@@ -31,7 +32,7 @@ public class NotificationService {
         PageRequest pageRequest = PageRequest.of(normalizePage(page), normalizeSize(size));
 
         Page<NotificationResponseDto> notifications = notificationRepository
-                .findByRecipientOrderByCreatedAtDesc(recipient, pageRequest)
+                .findByRecipientOrderByCreatedAtDescIdDesc(recipient, pageRequest)
                 .map(NotificationResponseDto::from);
 
         return NotificationPageResponseDto.from(notifications);
@@ -54,7 +55,7 @@ public class NotificationService {
         User recipient = findUserByEmail(email);
         return notificationRepository.markAllAsReadByRecipient(
                 recipient,
-                java.time.LocalDateTime.now(Notification.KST_ZONE)
+                DateTimeUtils.nowInKst()
         );
     }
 

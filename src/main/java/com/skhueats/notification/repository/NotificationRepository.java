@@ -14,11 +14,11 @@ import java.util.Optional;
 
 public interface NotificationRepository extends JpaRepository<Notification, String> {
 
-    Page<Notification> findByRecipientOrderByCreatedAtDesc(User recipient, Pageable pageable);
+    Page<Notification> findByRecipientOrderByCreatedAtDescIdDesc(User recipient, Pageable pageable);
 
     Optional<Notification> findByIdAndRecipient(String id, User recipient);
 
-    @Modifying(clearAutomatically = true)
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
             UPDATE Notification n
             SET n.read = true,
