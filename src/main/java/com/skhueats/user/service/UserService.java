@@ -6,6 +6,7 @@ import com.skhueats.global.exception.ErrorCode;
 import com.skhueats.user.dto.request.UpdateMyProfileRequestDto;
 import com.skhueats.user.dto.response.MyProfileResponseDto;
 import com.skhueats.user.entity.User;
+import com.skhueats.user.repository.UserFoodPreferenceRepository;
 import com.skhueats.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -14,12 +15,15 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class UserService {
 
     private final UserRepository userRepository;
+    private final UserFoodPreferenceRepository userFoodPreferenceRepository;
     private final RefreshTokenRepository refreshTokenRepository;
 
     public MyProfileResponseDto getMyProfile() {
@@ -28,7 +32,7 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
 
-        return MyProfileResponseDto.from(user);
+        return createMyProfileResponse(user);
     }
 
     @Transactional
@@ -46,7 +50,7 @@ public class UserService {
             user.updateNickname(newNickname);
         }
 
-        return MyProfileResponseDto.from(user);
+        return createMyProfileResponse(user);
     }
 
     @Transactional
@@ -57,7 +61,14 @@ public class UserService {
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
 
         refreshTokenRepository.deleteByEmail(email);
+        userFoodPreferenceRepository.deleteAllByUserInBulk(user);
         userRepository.delete(user);
+    }
+
+    private MyProfileResponseDto createMyProfileResponse(User user) {
+        List<String> foodCategories = userFoodPreferenceRepository.findCategoriesByUser(user);
+
+        return MyProfileResponseDto.from(user, foodCategories);
     }
 
     private String getCurrentUserEmail() {
