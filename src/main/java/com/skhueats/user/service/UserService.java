@@ -6,7 +6,6 @@ import com.skhueats.global.exception.ErrorCode;
 import com.skhueats.user.dto.request.UpdateMyProfileRequestDto;
 import com.skhueats.user.dto.response.MyProfileResponseDto;
 import com.skhueats.user.entity.User;
-import com.skhueats.user.entity.UserFoodPreference;
 import com.skhueats.user.repository.UserFoodPreferenceRepository;
 import com.skhueats.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -62,14 +61,12 @@ public class UserService {
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
 
         refreshTokenRepository.deleteByEmail(email);
-        userFoodPreferenceRepository.deleteAllByUser(user);
+        userFoodPreferenceRepository.deleteAllByUserInBulk(user);
         userRepository.delete(user);
     }
 
     private MyProfileResponseDto createMyProfileResponse(User user) {
-        List<String> foodCategories = userFoodPreferenceRepository.findAllByUser(user).stream()
-                .map(UserFoodPreference::getCategory)
-                .toList();
+        List<String> foodCategories = userFoodPreferenceRepository.findCategoriesByUser(user);
 
         return MyProfileResponseDto.from(user, foodCategories);
     }
