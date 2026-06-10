@@ -42,6 +42,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/auth/check-nickname"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/posts").authenticated()
                         .anyRequest().authenticated()
                 )
                 .httpBasic(AbstractHttpConfigurer::disable)

@@ -98,6 +98,12 @@ public enum ErrorCode {
             HttpStatus.NOT_FOUND,
             "USER_404",
             "사용자를 찾을 수 없습니다."
+    ),
+
+    POST_DAILY_LIMIT_EXCEEDED(
+            HttpStatus.TOO_MANY_REQUESTS,
+            "POST_429_DAILY_LIMIT",
+            "하루 최대 3개까지 모집글을 작성할 수 있습니다."
     );
 
     private final HttpStatus status;

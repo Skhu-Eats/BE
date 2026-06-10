@@ -70,4 +70,12 @@ public class User {
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
+    public void increasePostCount() {
+        if (this.postCount == null) {
+            this.postCount = 0;
+        }
+
+        this.postCount++;
+    }
 }
