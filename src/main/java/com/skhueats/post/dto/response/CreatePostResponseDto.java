@@ -1,6 +1,7 @@
 package com.skhueats.post.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.skhueats.post.entity.Post;
 import lombok.Builder;
 import lombok.Getter;
@@ -10,46 +11,37 @@ import java.util.List;
 
 @Getter
 @Builder
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class CreatePostResponseDto {
 
-    @JsonProperty("post_id")
     private String postId;
 
-    @JsonProperty("host_id")
     private String hostId;
 
-    @JsonProperty("host_nickname")
     private String hostNickname;
 
     private String title;
 
-    @JsonProperty("food_categories")
     private List<String> foodCategories;
 
     private String location;
 
-    @JsonProperty("meeting_time")
     private LocalDateTime meetingTime;
 
     private LocalDateTime deadline;
 
-    @JsonProperty("max_participants")
     private Integer maxParticipants;
 
-    @JsonProperty("current_participants")
     private Integer currentParticipants;
 
     private String memo;
 
-    @JsonProperty("kakao_link")
     private String kakaoLink;
 
     private String status;
 
-    @JsonProperty("created_at")
     private LocalDateTime createdAt;
 
-    @JsonProperty("updated_at")
     private LocalDateTime updatedAt;
 
     public static CreatePostResponseDto of(Post post, List<String> foodCategories) {
