@@ -14,8 +14,8 @@ CREATE TABLE notifications (
         FOREIGN KEY (recipient_id) REFERENCES users (id)
 );
 
-CREATE INDEX idx_notifications_recipient_created_at
-    ON notifications (recipient_id, created_at);
+CREATE INDEX idx_notifications_recipient_created_at_id
+    ON notifications (recipient_id, created_at, id);
 
 CREATE INDEX idx_notifications_recipient_is_read
     ON notifications (recipient_id, is_read);
