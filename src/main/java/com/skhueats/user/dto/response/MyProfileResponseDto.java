@@ -1,26 +1,42 @@
 package com.skhueats.user.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.skhueats.user.entity.User;
-import lombok.Builder;
-import lombok.Getter;
 
-@Getter
-@Builder
-public class MyProfileResponseDto {
+import java.util.List;
 
-    private String userId;
-    private String email;
-    private String nickname;
+public record MyProfileResponseDto(
 
-    public static MyProfileResponseDto from(User user) {
-        if (user == null) {
-            throw new IllegalArgumentException("User must not be null");
-        }
+        @JsonProperty("user_id")
+        String userId,
 
-        return MyProfileResponseDto.builder()
-                .userId(user.getId())
-                .email(user.getEmail())
-                .nickname(user.getNickname())
-                .build();
+        String email,
+
+        String nickname,
+
+        String department,
+
+        @JsonProperty("admission_year")
+        Integer admissionYear,
+
+        String bio,
+
+        @JsonProperty("food_categories")
+        List<String> foodCategories,
+
+        String avatar
+) {
+
+    public static MyProfileResponseDto from(User user, List<String> foodCategories) {
+        return new MyProfileResponseDto(
+                user.getId(),
+                user.getEmail(),
+                user.getNickname(),
+                user.getDepartment(),
+                user.getAdmissionYear(),
+                user.getBio(),
+                foodCategories,
+                null
+        );
     }
 }

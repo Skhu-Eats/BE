@@ -3,8 +3,8 @@ package com.skhueats.auth.service;
 import com.skhueats.auth.dto.request.LoginRequest;
 import com.skhueats.auth.dto.request.LogoutRequest;
 import com.skhueats.auth.dto.request.RegisterRequestDto;
-import com.skhueats.auth.dto.response.CheckNicknameResponseDto;
 import com.skhueats.auth.dto.request.TokenRefreshRequest;
+import com.skhueats.auth.dto.response.CheckNicknameResponseDto;
 import com.skhueats.auth.dto.response.LoginResponse;
 import com.skhueats.auth.dto.response.RegisterResponseDto;
 import com.skhueats.auth.entity.RefreshToken;
@@ -13,6 +13,8 @@ import com.skhueats.auth.repository.RefreshTokenRepository;
 import com.skhueats.global.exception.ApiException;
 import com.skhueats.global.exception.ErrorCode;
 import com.skhueats.user.entity.User;
+import com.skhueats.user.entity.UserFoodPreference;
+import com.skhueats.user.repository.UserFoodPreferenceRepository;
 import com.skhueats.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,6 +34,7 @@ public class AuthService {
     );
 
     private final UserRepository userRepository;
+    private final UserFoodPreferenceRepository userFoodPreferenceRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final RedisVerificationService redisVerificationService;
     private final PasswordEncoder passwordEncoder;
@@ -45,12 +48,14 @@ public class AuthService {
     private long refreshTokenExpiry;
 
     public AuthService(UserRepository userRepository,
+                       UserFoodPreferenceRepository userFoodPreferenceRepository,
                        RefreshTokenRepository refreshTokenRepository,
                        RedisVerificationService redisVerificationService,
                        PasswordEncoder passwordEncoder,
                        MailService mailService,
                        JwtTokenProvider jwtTokenProvider) {
         this.userRepository = userRepository;
+        this.userFoodPreferenceRepository = userFoodPreferenceRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.redisVerificationService = redisVerificationService;
         this.passwordEncoder = passwordEncoder;
@@ -61,9 +66,11 @@ public class AuthService {
     public void sendVerificationCode(String email) {
         String normalizedEmail = normalizeEmail(email);
         validateSchoolEmail(normalizedEmail);
+
         if (userRepository.existsByEmail(normalizedEmail)) {
             throw new ApiException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
+
         String code = generateVerificationCode();
         redisVerificationService.saveVerificationCode(normalizedEmail, code);
         mailService.sendVerificationCode(normalizedEmail, code);
@@ -72,10 +79,13 @@ public class AuthService {
     public void verifyCode(String email, String code) {
         String normalizedEmail = normalizeEmail(email);
         validateSchoolEmail(normalizedEmail);
+
         boolean verified = redisVerificationService.verifyCode(normalizedEmail, code);
+
         if (!verified) {
             throw new ApiException(ErrorCode.VERIFICATION_CODE_MISMATCH);
         }
+
         redisVerificationService.markEmailAsVerified(normalizedEmail);
     }
 
@@ -84,20 +94,26 @@ public class AuthService {
         if (request == null) {
             throw new ApiException(ErrorCode.INVALID_REQUEST, "회원가입 요청 정보가 없습니다.");
         }
+
         String email = normalizeEmail(request.getEmail());
         String nickname = normalizeNickname(request.getNickname());
         String department = normalizeDepartment(request.getDepartment());
         String bio = normalizeBio(request.getBio());
+
         validateSchoolEmail(email);
+
         if (userRepository.existsByEmail(email)) {
             throw new ApiException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
+
         if (userRepository.existsByNickname(nickname)) {
             throw new ApiException(ErrorCode.NICKNAME_ALREADY_EXISTS);
         }
+
         if (!redisVerificationService.isEmailVerified(email)) {
             throw new ApiException(ErrorCode.EMAIL_NOT_VERIFIED);
         }
+
         User user = new User();
         user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
@@ -109,8 +125,13 @@ public class AuthService {
         user.setMannerScore(0);
         user.setPostCount(0);
         user.setJoinCount(0);
+
         User savedUser = userRepository.save(user);
+
+        saveUserFoodPreferences(savedUser, request.getFoodCategories());
+
         redisVerificationService.consumeVerifiedEmail(email);
+
         return RegisterResponseDto.from(savedUser);
     }
 
@@ -129,18 +150,24 @@ public class AuthService {
     @Transactional
     public LoginResponse login(LoginRequest req) {
         String email = normalizeEmail(req.getEmail());
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(ErrorCode.INVALID_CREDENTIALS));
+
         if (!user.isEmailVerified()) {
             throw new ApiException(ErrorCode.EMAIL_NOT_VERIFIED);
         }
+
         if (!passwordEncoder.matches(req.getPassword(), user.getPasswordHash())) {
             throw new ApiException(ErrorCode.INVALID_CREDENTIALS);
         }
+
         String accessToken = jwtTokenProvider.generateAccessToken(email);
         String refreshToken = jwtTokenProvider.generateRefreshToken(email);
+
         LocalDateTime expiresAt = LocalDateTime.now()
                 .plusSeconds(refreshTokenExpiry / 1000);
+
         refreshTokenRepository.findByEmail(email).ifPresentOrElse(
                 rt -> rt.rotate(refreshToken, expiresAt),
                 () -> refreshTokenRepository.save(
@@ -151,6 +178,7 @@ public class AuthService {
                                 .build()
                 )
         );
+
         return LoginResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -165,16 +193,23 @@ public class AuthService {
     public LoginResponse refresh(TokenRefreshRequest req) {
         RefreshToken stored = refreshTokenRepository.findByToken(req.getRefreshToken())
                 .orElseThrow(() -> new ApiException(ErrorCode.INVALID_REFRESH_TOKEN));
+
         if (stored.isExpired()) {
             refreshTokenRepository.delete(stored);
             throw new ApiException(ErrorCode.EXPIRED_REFRESH_TOKEN);
         }
+
         User user = userRepository.findByEmail(stored.getEmail())
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+
         String newAccess = jwtTokenProvider.generateAccessToken(user.getEmail());
         String newRefresh = jwtTokenProvider.generateRefreshToken(user.getEmail());
-        LocalDateTime newExp = LocalDateTime.now().plusSeconds(refreshTokenExpiry / 1000);
+
+        LocalDateTime newExp = LocalDateTime.now()
+                .plusSeconds(refreshTokenExpiry / 1000);
+
         stored.rotate(newRefresh, newExp);
+
         return LoginResponse.builder()
                 .accessToken(newAccess)
                 .refreshToken(newRefresh)
@@ -189,13 +224,32 @@ public class AuthService {
     public void logout(LogoutRequest req) {
         RefreshToken stored = refreshTokenRepository.findByToken(req.getRefreshToken())
                 .orElseThrow(() -> new ApiException(ErrorCode.INVALID_REFRESH_TOKEN));
+
         refreshTokenRepository.delete(stored);
+    }
+
+    private void saveUserFoodPreferences(User user, List<String> foodCategories) {
+        if (foodCategories == null || foodCategories.isEmpty()) {
+            return;
+        }
+
+        List<UserFoodPreference> userFoodPreferences = foodCategories.stream()
+                .filter(category -> category != null && !category.trim().isEmpty())
+                .map(String::trim)
+                .distinct()
+                .map(category -> UserFoodPreference.of(user, category))
+                .toList();
+
+        if (!userFoodPreferences.isEmpty()) {
+            userFoodPreferenceRepository.saveAll(userFoodPreferences);
+        }
     }
 
     private String normalizeEmail(String email) {
         if (email == null || email.trim().isEmpty()) {
             throw new ApiException(ErrorCode.INVALID_SCHOOL_EMAIL);
         }
+
         return email.trim().toLowerCase();
     }
 
@@ -203,6 +257,7 @@ public class AuthService {
         if (nickname == null || nickname.trim().isEmpty()) {
             throw new ApiException(ErrorCode.INVALID_REQUEST, "닉네임은 필수입니다.");
         }
+
         return nickname.trim();
     }
 
@@ -210,6 +265,7 @@ public class AuthService {
         if (department == null || department.trim().isEmpty()) {
             throw new ApiException(ErrorCode.INVALID_REQUEST, "학과는 필수입니다.");
         }
+
         return department.trim();
     }
 
@@ -217,6 +273,7 @@ public class AuthService {
         if (bio == null || bio.trim().isEmpty()) {
             return null;
         }
+
         return bio.trim();
     }
 
@@ -229,6 +286,7 @@ public class AuthService {
     private String generateVerificationCode() {
         SecureRandom random = new SecureRandom();
         int code = random.nextInt(900000) + 100000;
+
         return String.valueOf(code);
     }
 }
