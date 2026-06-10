@@ -11,5 +11,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Stri
 
     List<Notification> findByRecipientOrderByCreatedAtDesc(User recipient);
 
+    List<Notification> findByRecipientAndReadFalse(User recipient);
+
     Optional<Notification> findByIdAndRecipient(String id, User recipient);
 }

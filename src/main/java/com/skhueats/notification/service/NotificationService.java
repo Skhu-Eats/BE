@@ -31,6 +31,28 @@ public class NotificationService {
     }
 
     @Transactional
+    public NotificationResponseDto markAsRead(String email, String notificationId) {
+        User recipient = findUserByEmail(email);
+
+        Notification notification = notificationRepository.findByIdAndRecipient(notificationId, recipient)
+                .orElseThrow(() -> new ApiException(ErrorCode.NOTIFICATION_NOT_FOUND));
+
+        notification.markAsRead();
+
+        return NotificationResponseDto.from(notification);
+    }
+
+    @Transactional
+    public int markAllAsRead(String email) {
+        User recipient = findUserByEmail(email);
+        List<Notification> unreadNotifications = notificationRepository.findByRecipientAndReadFalse(recipient);
+
+        unreadNotifications.forEach(Notification::markAsRead);
+
+        return unreadNotifications.size();
+    }
+
+    @Transactional
     public void createNotification(
             User recipient,
             NotificationType type,
