@@ -100,6 +100,12 @@ public enum ErrorCode {
             "사용자를 찾을 수 없습니다."
     ),
 
+    NOTIFICATION_NOT_FOUND(
+            HttpStatus.NOT_FOUND,
+            "NOTIFICATION_404",
+            "알림을 찾을 수 없습니다."
+    ),
+
     POST_DAILY_LIMIT_EXCEEDED(
             HttpStatus.TOO_MANY_REQUESTS,
             "POST_429_DAILY_LIMIT",
