@@ -3,6 +3,7 @@ package com.skhueats.post.service;
 import com.skhueats.global.exception.ApiException;
 import com.skhueats.global.exception.ErrorCode;
 import com.skhueats.post.dto.request.CreatePostRequestDto;
+import com.skhueats.post.dto.request.UpdatePostRequestDto;
 import com.skhueats.post.dto.response.CreatePostResponseDto;
 import com.skhueats.post.dto.response.PostDetailResponseDto;
 import com.skhueats.post.dto.response.PostListResponseDto;
@@ -107,6 +108,30 @@ public class PostService {
         return PostDetailResponseDto.of(post, foodCategories);
     }
 
+    @Transactional
+    public PostDetailResponseDto updatePost(String email, String postId, UpdatePostRequestDto requestDto) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+        Post post = findPost(postId);
+
+        validatePostHost(post, user);
+        validateMaxParticipants(post, requestDto.getMaxParticipants());
+
+        post.update(
+                requestDto.getTitle(),
+                requestDto.getLocation(),
+                requestDto.getMeetingTime(),
+                requestDto.getMaxParticipants(),
+                requestDto.getMemo(),
+                requestDto.getKakaoLink()
+        );
+
+        List<String> foodCategories = normalizeFoodCategories(requestDto.getFoodCategories());
+        replaceFoodCategories(post, foodCategories);
+
+        return PostDetailResponseDto.of(post, foodCategories);
+    }
+
     private PostStatus resolveStatus(String status) {
         if (status == null || status.isBlank()) {
             return PostStatus.OPEN;
@@ -151,5 +176,30 @@ public class PostService {
         return postFoodCategoryRepository.findAllByPostId(post.getId()).stream()
                 .map(PostFoodCategory::getCategory)
                 .toList();
+    }
+
+    private void validatePostHost(Post post, User user) {
+        if (!post.getHost().getId().equals(user.getId())) {
+            throw new ApiException(ErrorCode.POST_FORBIDDEN);
+        }
+    }
+
+    private void validateMaxParticipants(Post post, Integer maxParticipants) {
+        if (maxParticipants < post.getCurrentParticipants()) {
+            throw new ApiException(
+                    ErrorCode.INVALID_REQUEST,
+                    "최대 참가 인원은 현재 참가 인원보다 적을 수 없습니다."
+            );
+        }
+    }
+
+    private void replaceFoodCategories(Post post, List<String> foodCategories) {
+        postFoodCategoryRepository.deleteByPostId(post.getId());
+
+        List<PostFoodCategory> postFoodCategories = foodCategories.stream()
+                .map(category -> new PostFoodCategory(post, category))
+                .toList();
+
+        postFoodCategoryRepository.saveAll(postFoodCategories);
     }
 }
