@@ -106,6 +106,12 @@ public enum ErrorCode {
             "알림을 찾을 수 없습니다."
     ),
 
+    POST_NOT_FOUND(
+            HttpStatus.NOT_FOUND,
+            "POST_404",
+            "모집글을 찾을 수 없습니다."
+    ),
+
     POST_DAILY_LIMIT_EXCEEDED(
             HttpStatus.TOO_MANY_REQUESTS,
             "POST_429_DAILY_LIMIT",

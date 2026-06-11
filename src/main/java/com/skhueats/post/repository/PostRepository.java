@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface PostRepository extends JpaRepository<Post, String> {
 
@@ -17,6 +18,9 @@ public interface PostRepository extends JpaRepository<Post, String> {
             LocalDateTime start,
             LocalDateTime end
     );
+
+    @Query("SELECT p FROM Post p JOIN FETCH p.host WHERE p.id = :id")
+    Optional<Post> findByIdWithHost(@Param("id") String id);
 
     @Query("""
             SELECT p FROM Post p
