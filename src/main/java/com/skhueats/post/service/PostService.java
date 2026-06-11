@@ -188,7 +188,7 @@ public class PostService {
         if (maxParticipants < post.getCurrentParticipants()) {
             throw new ApiException(
                     ErrorCode.INVALID_REQUEST,
-                    "max_participants cannot be less than current_participants."
+                    "최대 참가 인원은 현재 참가 인원보다 적을 수 없습니다."
             );
         }
     }
