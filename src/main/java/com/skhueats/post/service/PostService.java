@@ -4,8 +4,11 @@ import com.skhueats.global.exception.ApiException;
 import com.skhueats.global.exception.ErrorCode;
 import com.skhueats.post.dto.request.CreatePostRequestDto;
 import com.skhueats.post.dto.response.CreatePostResponseDto;
+import com.skhueats.post.dto.response.PostListResponseDto;
 import com.skhueats.post.entity.Post;
 import com.skhueats.post.entity.PostFoodCategory;
+import com.skhueats.post.entity.PostStatus;
+import com.skhueats.post.entity.TimeSlot;
 import com.skhueats.post.repository.PostFoodCategoryRepository;
 import com.skhueats.post.repository.PostRepository;
 import com.skhueats.user.entity.User;
@@ -18,6 +21,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -61,6 +66,48 @@ public class PostService {
         user.increasePostCount();
 
         return CreatePostResponseDto.of(savedPost, foodCategories);
+    }
+
+    public List<PostListResponseDto> getPosts(String timeSlot, String status) {
+        PostStatus statusFilter = resolveStatus(status);
+        TimeSlot slot = TimeSlot.from(timeSlot);
+        Integer startHour = (slot == null) ? null : slot.getStartHour();
+        Integer endHour = (slot == null) ? null : slot.getEndHour();
+
+        List<Post> posts = postRepository.findPostsByFilter(
+                statusFilter, startHour, endHour, LocalDateTime.now(KST_ZONE)
+        );
+        if (posts.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> postIds = posts.stream()
+                .map(Post::getId)
+                .toList();
+
+        Map<String, List<String>> categoriesByPostId = postFoodCategoryRepository.findAllByPostIdIn(postIds).stream()
+                .collect(Collectors.groupingBy(
+                        postFoodCategory -> postFoodCategory.getPost().getId(),
+                        Collectors.mapping(PostFoodCategory::getCategory, Collectors.toList())
+                ));
+
+        return posts.stream()
+                .map(post -> PostListResponseDto.of(
+                        post,
+                        categoriesByPostId.getOrDefault(post.getId(), List.of())
+                ))
+                .toList();
+    }
+
+    private PostStatus resolveStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return PostStatus.OPEN;
+        }
+        try {
+            return PostStatus.valueOf(status.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST, "status는 open/closed/cancelled만 허용됩니다.");
+        }
     }
 
     private void validateDailyPostLimit(User user) {
