@@ -7,6 +7,7 @@ import com.skhueats.auth.dto.request.RegisterRequestDto;
 import com.skhueats.auth.dto.response.LoginResponse;
 import com.skhueats.auth.dto.response.RegisterResponseDto;
 import com.skhueats.post.dto.request.CreatePostRequestDto;
+import com.skhueats.post.dto.request.UpdatePostRequestDto;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
@@ -99,5 +100,27 @@ class DtoSnakeCaseJsonTest {
         assertThat(request.getMeetingTime()).isEqualTo(LocalDateTime.of(2026, 6, 11, 18, 0));
         assertThat(request.getMaxParticipants()).isEqualTo(4);
         assertThat(request.getKakaoLink()).isEqualTo("https://open.kakao.com/o/example");
+    }
+
+    @Test
+    void updatePostRequestDeserializesSnakeCaseFields() throws Exception {
+        String json = """
+                {
+                  "title": "Updated dinner",
+                  "food_categories": ["Korean", "Soup"],
+                  "location": "Student hall",
+                  "meeting_time": "2026-06-12T18:30:00",
+                  "max_participants": 3,
+                  "memo": "Updated memo",
+                  "kakao_link": "https://open.kakao.com/o/updated"
+                }
+                """;
+
+        UpdatePostRequestDto request = objectMapper.readValue(json, UpdatePostRequestDto.class);
+
+        assertThat(request.getFoodCategories()).containsExactly("Korean", "Soup");
+        assertThat(request.getMeetingTime()).isEqualTo(LocalDateTime.of(2026, 6, 12, 18, 30));
+        assertThat(request.getMaxParticipants()).isEqualTo(3);
+        assertThat(request.getKakaoLink()).isEqualTo("https://open.kakao.com/o/updated");
     }
 }

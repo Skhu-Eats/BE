@@ -1,6 +1,7 @@
 package com.skhueats.post.controller;
 
 import com.skhueats.post.dto.request.CreatePostRequestDto;
+import com.skhueats.post.dto.request.UpdatePostRequestDto;
 import com.skhueats.post.dto.response.CreatePostResponseDto;
 import com.skhueats.post.dto.response.PostDetailResponseDto;
 import com.skhueats.post.dto.response.PostListResponseDto;
@@ -47,6 +48,19 @@ public class PostController {
     @GetMapping("/{postId}")
     public ResponseEntity<PostDetailResponseDto> getPost(@PathVariable("postId") String postId) {
         PostDetailResponseDto response = postService.getPost(postId);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{postId}")
+    public ResponseEntity<PostDetailResponseDto> updatePost(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable("postId") String postId,
+            @Valid @RequestBody UpdatePostRequestDto requestDto
+    ) {
+        String email = userDetails.getUsername();
+
+        PostDetailResponseDto response = postService.updatePost(email, postId, requestDto);
 
         return ResponseEntity.ok(response);
     }
