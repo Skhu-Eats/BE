@@ -64,4 +64,16 @@ public class PostController {
 
         return ResponseEntity.ok(response);
     }
+
+    @DeleteMapping("/{postId}")
+    public ResponseEntity<Void> deletePost(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable("postId") String postId
+    ) {
+        String email = userDetails.getUsername();
+
+        postService.deletePost(email, postId);
+
+        return ResponseEntity.noContent().build();
+    }
 }
