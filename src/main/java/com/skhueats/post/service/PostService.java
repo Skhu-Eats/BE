@@ -143,7 +143,7 @@ public class PostService {
     }
 
     private Post findPost(String postId) {
-        return postRepository.findById(postId)
+        return postRepository.findByIdWithHost(postId)
                 .orElseThrow(() -> new ApiException(ErrorCode.POST_NOT_FOUND));
     }
 

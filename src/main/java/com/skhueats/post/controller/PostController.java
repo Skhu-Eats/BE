@@ -45,7 +45,7 @@ public class PostController {
     }
 
     @GetMapping("/{postId}")
-    public ResponseEntity<PostDetailResponseDto> getPost(@PathVariable String postId) {
+    public ResponseEntity<PostDetailResponseDto> getPost(@PathVariable("postId") String postId) {
         PostDetailResponseDto response = postService.getPost(postId);
 
         return ResponseEntity.ok(response);
