@@ -2,6 +2,7 @@ package com.skhueats.post.controller;
 
 import com.skhueats.post.dto.request.CreatePostRequestDto;
 import com.skhueats.post.dto.response.CreatePostResponseDto;
+import com.skhueats.post.dto.response.PostDetailResponseDto;
 import com.skhueats.post.dto.response.PostListResponseDto;
 import com.skhueats.post.service.PostService;
 import jakarta.validation.Valid;
@@ -41,5 +42,12 @@ public class PostController {
         List<PostListResponseDto> posts = postService.getPosts(timeSlot, status);
 
         return ResponseEntity.ok(posts);
+    }
+
+    @GetMapping("/{postId}")
+    public ResponseEntity<PostDetailResponseDto> getPost(@PathVariable String postId) {
+        PostDetailResponseDto response = postService.getPost(postId);
+
+        return ResponseEntity.ok(response);
     }
 }

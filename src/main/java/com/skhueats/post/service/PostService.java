@@ -4,6 +4,7 @@ import com.skhueats.global.exception.ApiException;
 import com.skhueats.global.exception.ErrorCode;
 import com.skhueats.post.dto.request.CreatePostRequestDto;
 import com.skhueats.post.dto.response.CreatePostResponseDto;
+import com.skhueats.post.dto.response.PostDetailResponseDto;
 import com.skhueats.post.dto.response.PostListResponseDto;
 import com.skhueats.post.entity.Post;
 import com.skhueats.post.entity.PostFoodCategory;
@@ -99,6 +100,13 @@ public class PostService {
                 .toList();
     }
 
+    public PostDetailResponseDto getPost(String postId) {
+        Post post = findPost(postId);
+        List<String> foodCategories = findFoodCategories(post);
+
+        return PostDetailResponseDto.of(post, foodCategories);
+    }
+
     private PostStatus resolveStatus(String status) {
         if (status == null || status.isBlank()) {
             return PostStatus.OPEN;
@@ -131,6 +139,17 @@ public class PostService {
         return foodCategories.stream()
                 .map(String::trim)
                 .distinct()
+                .toList();
+    }
+
+    private Post findPost(String postId) {
+        return postRepository.findById(postId)
+                .orElseThrow(() -> new ApiException(ErrorCode.POST_NOT_FOUND));
+    }
+
+    private List<String> findFoodCategories(Post post) {
+        return postFoodCategoryRepository.findAllByPostId(post.getId()).stream()
+                .map(PostFoodCategory::getCategory)
                 .toList();
     }
 }
