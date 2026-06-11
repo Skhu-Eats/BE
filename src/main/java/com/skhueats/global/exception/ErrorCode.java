@@ -115,7 +115,7 @@ public enum ErrorCode {
     POST_FORBIDDEN(
             HttpStatus.FORBIDDEN,
             "POST_403_FORBIDDEN",
-            "모집글을 수정할 권한이 없습니다."
+            "모집글에 대한 권한이 없습니다."
     ),
 
     POST_DAILY_LIMIT_EXCEEDED(
