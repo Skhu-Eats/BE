@@ -24,11 +24,13 @@ public interface PostRepository extends JpaRepository<Post, String> {
             WHERE (:status IS NULL OR p.status = :status)
               AND (:startHour IS NULL OR HOUR(p.meetingTime) >= :startHour)
               AND (:endHour IS NULL OR HOUR(p.meetingTime) < :endHour)
+              AND p.deadline >= :now
             ORDER BY p.deadline ASC
             """)
     List<Post> findPostsByFilter(
             @Param("status") PostStatus status,
             @Param("startHour") Integer startHour,
-            @Param("endHour") Integer endHour
+            @Param("endHour") Integer endHour,
+            @Param("now") LocalDateTime now
     );
 }

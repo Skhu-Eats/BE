@@ -35,7 +35,6 @@ public class PostController {
 
     @GetMapping
     public ResponseEntity<List<PostListResponseDto>> getPosts(
-            @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(name = "time_slot", required = false) String timeSlot,
             @RequestParam(name = "status", required = false) String status
     ) {

@@ -8,6 +8,7 @@ import com.skhueats.post.dto.response.PostListResponseDto;
 import com.skhueats.post.entity.Post;
 import com.skhueats.post.entity.PostFoodCategory;
 import com.skhueats.post.entity.PostStatus;
+import com.skhueats.post.entity.TimeSlot;
 import com.skhueats.post.repository.PostFoodCategoryRepository;
 import com.skhueats.post.repository.PostRepository;
 import com.skhueats.user.entity.User;
@@ -69,10 +70,13 @@ public class PostService {
 
     public List<PostListResponseDto> getPosts(String timeSlot, String status) {
         PostStatus statusFilter = resolveStatus(status);
-        Integer startHour = resolveStartHour(timeSlot);
-        Integer endHour = resolveEndHour(timeSlot);
+        TimeSlot slot = TimeSlot.from(timeSlot);
+        Integer startHour = (slot == null) ? null : slot.getStartHour();
+        Integer endHour = (slot == null) ? null : slot.getEndHour();
 
-        List<Post> posts = postRepository.findPostsByFilter(statusFilter, startHour, endHour);
+        List<Post> posts = postRepository.findPostsByFilter(
+                statusFilter, startHour, endHour, LocalDateTime.now(KST_ZONE)
+        );
         if (posts.isEmpty()) {
             return List.of();
         }
@@ -104,32 +108,6 @@ public class PostService {
         } catch (IllegalArgumentException e) {
             throw new ApiException(ErrorCode.INVALID_REQUEST, "status는 open/closed/cancelled만 허용됩니다.");
         }
-    }
-
-    private Integer resolveStartHour(String timeSlot) {
-        if (isAllTimeSlot(timeSlot)) {
-            return null;
-        }
-        return switch (timeSlot.trim().toLowerCase()) {
-            case "lunch" -> 11;
-            case "dinner" -> 17;
-            default -> throw new ApiException(ErrorCode.INVALID_REQUEST, "time_slot은 lunch/dinner/all만 허용됩니다.");
-        };
-    }
-
-    private Integer resolveEndHour(String timeSlot) {
-        if (isAllTimeSlot(timeSlot)) {
-            return null;
-        }
-        return switch (timeSlot.trim().toLowerCase()) {
-            case "lunch" -> 14;
-            case "dinner" -> 20;
-            default -> throw new ApiException(ErrorCode.INVALID_REQUEST, "time_slot은 lunch/dinner/all만 허용됩니다.");
-        };
-    }
-
-    private boolean isAllTimeSlot(String timeSlot) {
-        return timeSlot == null || timeSlot.isBlank() || timeSlot.trim().equalsIgnoreCase("all");
     }
 
     private void validateDailyPostLimit(User user) {
