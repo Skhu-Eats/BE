@@ -78,4 +78,13 @@ public class User {
 
         this.postCount++;
     }
+
+    public void decreasePostCount() {
+        if (this.postCount == null || this.postCount <= 0) {
+            this.postCount = 0;
+            return;
+        }
+
+        this.postCount--;
+    }
 }

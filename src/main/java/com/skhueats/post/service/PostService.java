@@ -132,6 +132,18 @@ public class PostService {
         return PostDetailResponseDto.of(post, foodCategories);
     }
 
+    @Transactional
+    public void deletePost(String email, String postId) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+        Post post = findPost(postId);
+
+        validatePostHost(post, user);
+
+        postRepository.delete(post);
+        user.decreasePostCount();
+    }
+
     private PostStatus resolveStatus(String status) {
         if (status == null || status.isBlank()) {
             return PostStatus.OPEN;
