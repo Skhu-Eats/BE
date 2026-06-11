@@ -112,6 +112,12 @@ public enum ErrorCode {
             "모집글을 찾을 수 없습니다."
     ),
 
+    POST_FORBIDDEN(
+            HttpStatus.FORBIDDEN,
+            "POST_403_FORBIDDEN",
+            "You do not have permission to modify this post."
+    ),
+
     POST_DAILY_LIMIT_EXCEEDED(
             HttpStatus.TOO_MANY_REQUESTS,
             "POST_429_DAILY_LIMIT",

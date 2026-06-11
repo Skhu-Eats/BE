@@ -81,6 +81,23 @@ public class Post {
         this.status = PostStatus.OPEN;
     }
 
+    public void update(
+            String title,
+            String location,
+            LocalDateTime meetingTime,
+            Integer maxParticipants,
+            String memo,
+            String kakaoLink
+    ) {
+        this.title = title;
+        this.location = location;
+        this.meetingTime = meetingTime;
+        this.deadline = meetingTime;
+        this.maxParticipants = maxParticipants;
+        this.memo = memo;
+        this.kakaoLink = kakaoLink;
+    }
+
     @PrePersist
     public void prePersist() {
         if (this.id == null) {

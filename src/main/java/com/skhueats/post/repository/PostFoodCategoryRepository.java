@@ -10,4 +10,6 @@ public interface PostFoodCategoryRepository extends JpaRepository<PostFoodCatego
     List<PostFoodCategory> findAllByPostId(String postId);
 
     List<PostFoodCategory> findAllByPostIdIn(List<String> postIds);
+
+    void deleteByPostId(String postId);
 }
