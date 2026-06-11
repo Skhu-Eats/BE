@@ -140,6 +140,7 @@ public class PostService {
 
         validatePostHost(post, user);
 
+        postFoodCategoryRepository.deleteByPostId(post.getId());
         postRepository.delete(post);
         user.decreasePostCount();
     }
