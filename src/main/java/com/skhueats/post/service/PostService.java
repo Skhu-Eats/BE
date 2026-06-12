@@ -150,7 +150,7 @@ public class PostService {
     }
 
     @Transactional
-    public JoinPostResponseDto cancelJoin(String email, String postId) {
+    public void cancelJoin(String email, String postId) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
         Post post = findPostForUpdate(postId);
@@ -173,8 +173,6 @@ public class PostService {
                 "POST",
                 post.getId()
         );
-
-        return JoinPostResponseDto.of(post, PostJoinStatus.AVAILABLE);
     }
 
     @Transactional
