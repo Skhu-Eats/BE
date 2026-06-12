@@ -9,6 +9,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @Slf4j
 @RestControllerAdvice
@@ -37,6 +38,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException e,
                                                                    HttpServletRequest request) {
         ErrorResponse response = ErrorResponse.of(ErrorCode.INVALID_REQUEST, e.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(ErrorCode.INVALID_REQUEST.getStatus()).body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException e,
+                                                                          HttpServletRequest request) {
+        String parameterName = e.getName();
+        String message = parameterName + " 형식이 올바르지 않습니다.";
+
+        ErrorResponse response = ErrorResponse.of(ErrorCode.INVALID_REQUEST, message, request.getRequestURI());
         return ResponseEntity.status(ErrorCode.INVALID_REQUEST.getStatus()).body(response);
     }
 
