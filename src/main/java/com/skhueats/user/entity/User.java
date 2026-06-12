@@ -95,4 +95,13 @@ public class User {
 
         this.joinCount++;
     }
+
+    public void decreaseJoinCount() {
+        if (this.joinCount == null || this.joinCount <= 0) {
+            this.joinCount = 0;
+            return;
+        }
+
+        this.joinCount--;
+    }
 }

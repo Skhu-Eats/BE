@@ -64,6 +64,10 @@ public class Participation {
         this.status = ParticipationStatus.JOINED;
     }
 
+    public void cancel() {
+        this.status = ParticipationStatus.CANCELLED;
+    }
+
     @PrePersist
     public void prePersist() {
         if (this.id == null) {
