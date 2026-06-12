@@ -1,6 +1,9 @@
 package com.skhueats.user.controller;
 
+import com.skhueats.global.exception.ApiException;
+import com.skhueats.global.exception.ErrorCode;
 import com.skhueats.post.dto.response.PostListResponseDto;
+import com.skhueats.post.dto.response.ParticipationHistoryPageResponseDto;
 import com.skhueats.post.service.PostService;
 import com.skhueats.user.dto.request.UpdateMyProfileRequestDto;
 import com.skhueats.user.dto.response.MyProfileResponseDto;
@@ -13,6 +16,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -44,6 +48,23 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/me/history")
+    public ResponseEntity<ParticipationHistoryPageResponseDto> getMyHistory(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(name = "page", defaultValue = "1") String page,
+            @RequestParam(name = "limit", defaultValue = "20") String limit
+    ) {
+        String email = userDetails.getUsername();
+
+        ParticipationHistoryPageResponseDto response = postService.getMyHistory(
+                email,
+                parsePositiveInteger(page, "page"),
+                parsePositiveInteger(limit, "limit")
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
     @PatchMapping("/me")
     public ResponseEntity<MyProfileResponseDto> updateMyProfile(
             @Valid @RequestBody UpdateMyProfileRequestDto requestDto
@@ -56,5 +77,13 @@ public class UserController {
     public ResponseEntity<Void> deleteMyAccount() {
         userService.deleteAccount();
         return ResponseEntity.noContent().build();
+    }
+
+    private int parsePositiveInteger(String value, String fieldName) {
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST, fieldName + "는 숫자여야 합니다.");
+        }
     }
 }

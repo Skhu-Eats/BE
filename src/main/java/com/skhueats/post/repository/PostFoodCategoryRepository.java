@@ -12,7 +12,8 @@ public interface PostFoodCategoryRepository extends JpaRepository<PostFoodCatego
 
     List<PostFoodCategory> findAllByPostId(String postId);
 
-    List<PostFoodCategory> findAllByPostIdIn(List<String> postIds);
+    @Query("select pfc from PostFoodCategory pfc join fetch pfc.post where pfc.post.id in :postIds")
+    List<PostFoodCategory> findAllByPostIdIn(@Param("postIds") List<String> postIds);
 
     @Modifying(flushAutomatically = true)
     @Query("delete from PostFoodCategory pfc where pfc.post.id = :postId")
