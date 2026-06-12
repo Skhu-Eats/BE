@@ -1,6 +1,7 @@
 package com.skhueats.user.controller;
 
 import com.skhueats.post.dto.response.PostListResponseDto;
+import com.skhueats.post.dto.response.ParticipationHistoryPageResponseDto;
 import com.skhueats.post.service.PostService;
 import com.skhueats.user.dto.request.UpdateMyProfileRequestDto;
 import com.skhueats.user.dto.response.MyProfileResponseDto;
@@ -13,6 +14,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -40,6 +42,19 @@ public class UserController {
         String email = userDetails.getUsername();
 
         List<PostListResponseDto> response = postService.getMyPosts(email);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/me/history")
+    public ResponseEntity<ParticipationHistoryPageResponseDto> getMyHistory(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "limit", defaultValue = "20") int limit
+    ) {
+        String email = userDetails.getUsername();
+
+        ParticipationHistoryPageResponseDto response = postService.getMyHistory(email, page, limit);
 
         return ResponseEntity.ok(response);
     }
