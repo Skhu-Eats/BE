@@ -45,6 +45,17 @@ public class PostController {
         return ResponseEntity.ok(posts);
     }
 
+    @GetMapping("/myposts")
+    public ResponseEntity<List<PostListResponseDto>> getMyPosts(
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        String email = userDetails.getUsername();
+
+        List<PostListResponseDto> posts = postService.getMyPosts(email);
+
+        return ResponseEntity.ok(posts);
+    }
+
     @GetMapping("/{postId}")
     public ResponseEntity<PostDetailResponseDto> getPost(@PathVariable("postId") String postId) {
         PostDetailResponseDto response = postService.getPost(postId);

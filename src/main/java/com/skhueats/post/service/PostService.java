@@ -77,28 +77,19 @@ public class PostService {
         Integer endHour = (slot == null) ? null : slot.getEndHour();
 
         List<Post> posts = postRepository.findPostsByFilter(
-                statusFilter, startHour, endHour, LocalDateTime.now(KST_ZONE)
+                statusFilter.name(), startHour, endHour, LocalDateTime.now(KST_ZONE)
         );
-        if (posts.isEmpty()) {
-            return List.of();
-        }
 
-        List<String> postIds = posts.stream()
-                .map(Post::getId)
-                .toList();
+        return createPostListResponse(posts);
+    }
 
-        Map<String, List<String>> categoriesByPostId = postFoodCategoryRepository.findAllByPostIdIn(postIds).stream()
-                .collect(Collectors.groupingBy(
-                        postFoodCategory -> postFoodCategory.getPost().getId(),
-                        Collectors.mapping(PostFoodCategory::getCategory, Collectors.toList())
-                ));
+    public List<PostListResponseDto> getMyPosts(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
 
-        return posts.stream()
-                .map(post -> PostListResponseDto.of(
-                        post,
-                        categoriesByPostId.getOrDefault(post.getId(), List.of())
-                ))
-                .toList();
+        List<Post> posts = postRepository.findAllByHostActiveFirst(user.getId());
+
+        return createPostListResponse(posts);
     }
 
     public PostDetailResponseDto getPost(String postId) {
@@ -188,6 +179,29 @@ public class PostService {
     private List<String> findFoodCategories(Post post) {
         return postFoodCategoryRepository.findAllByPostId(post.getId()).stream()
                 .map(PostFoodCategory::getCategory)
+                .toList();
+    }
+
+    private List<PostListResponseDto> createPostListResponse(List<Post> posts) {
+        if (posts.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> postIds = posts.stream()
+                .map(Post::getId)
+                .toList();
+
+        Map<String, List<String>> categoriesByPostId = postFoodCategoryRepository.findAllByPostIdIn(postIds).stream()
+                .collect(Collectors.groupingBy(
+                        postFoodCategory -> postFoodCategory.getPost().getId(),
+                        Collectors.mapping(PostFoodCategory::getCategory, Collectors.toList())
+                ));
+
+        return posts.stream()
+                .map(post -> PostListResponseDto.of(
+                        post,
+                        categoriesByPostId.getOrDefault(post.getId(), List.of())
+                ))
                 .toList();
     }
 

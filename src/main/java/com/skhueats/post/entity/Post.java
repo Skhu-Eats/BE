@@ -50,7 +50,7 @@ public class Post {
     @Column(name = "kakao_link", nullable = false, length = 500)
     private String kakaoLink;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = PostStatusConverter.class)
     @Column(name = "status", nullable = false, length = 20)
     private PostStatus status;
 

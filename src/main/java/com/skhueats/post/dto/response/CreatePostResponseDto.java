@@ -40,6 +40,8 @@ public class CreatePostResponseDto {
 
     private String status;
 
+    private String statusLabel;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
@@ -59,6 +61,7 @@ public class CreatePostResponseDto {
                 .memo(post.getMemo())
                 .kakaoLink(post.getKakaoLink())
                 .status(post.getStatus().name())
+                .statusLabel(post.getStatus().getDescription())
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
                 .build();
