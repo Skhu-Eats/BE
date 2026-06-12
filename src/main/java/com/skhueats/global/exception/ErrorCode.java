@@ -142,6 +142,18 @@ public enum ErrorCode {
             "이미 참여 중인 모임입니다."
     ),
 
+    POST_NOT_JOINED(
+            HttpStatus.BAD_REQUEST,
+            "POST_400_NOT_JOINED",
+            "참여 중인 모임이 아닙니다."
+    ),
+
+    POST_CANCEL_TIME_EXPIRED(
+            HttpStatus.CONFLICT,
+            "POST_409_CANCEL_TIME_EXPIRED",
+            "식사 시간 30분 전부터는 참여를 취소할 수 없습니다."
+    ),
+
     POST_RECRUITMENT_CLOSED(
             HttpStatus.CONFLICT,
             "POST_409_CLOSED",
