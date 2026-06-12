@@ -1,5 +1,7 @@
 package com.skhueats.user.controller;
 
+import com.skhueats.global.exception.ApiException;
+import com.skhueats.global.exception.ErrorCode;
 import com.skhueats.post.dto.response.PostListResponseDto;
 import com.skhueats.post.dto.response.ParticipationHistoryPageResponseDto;
 import com.skhueats.post.service.PostService;
@@ -49,12 +51,16 @@ public class UserController {
     @GetMapping("/me/history")
     public ResponseEntity<ParticipationHistoryPageResponseDto> getMyHistory(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam(name = "page", defaultValue = "1") int page,
-            @RequestParam(name = "limit", defaultValue = "20") int limit
+            @RequestParam(name = "page", defaultValue = "1") String page,
+            @RequestParam(name = "limit", defaultValue = "20") String limit
     ) {
         String email = userDetails.getUsername();
 
-        ParticipationHistoryPageResponseDto response = postService.getMyHistory(email, page, limit);
+        ParticipationHistoryPageResponseDto response = postService.getMyHistory(
+                email,
+                parsePositiveInteger(page, "page"),
+                parsePositiveInteger(limit, "limit")
+        );
 
         return ResponseEntity.ok(response);
     }
@@ -71,5 +77,13 @@ public class UserController {
     public ResponseEntity<Void> deleteMyAccount() {
         userService.deleteAccount();
         return ResponseEntity.noContent().build();
+    }
+
+    private int parsePositiveInteger(String value, String fieldName) {
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST, fieldName + "는 숫자여야 합니다.");
+        }
     }
 }
