@@ -8,6 +8,8 @@ import com.skhueats.post.dto.request.CreatePostRequestDto;
 import com.skhueats.post.dto.request.UpdatePostRequestDto;
 import com.skhueats.post.dto.response.CreatePostResponseDto;
 import com.skhueats.post.dto.response.JoinPostResponseDto;
+import com.skhueats.post.dto.response.ParticipationHistoryPageResponseDto;
+import com.skhueats.post.dto.response.ParticipationHistoryResponseDto;
 import com.skhueats.post.dto.response.PostDetailResponseDto;
 import com.skhueats.post.dto.response.PostJoinStatus;
 import com.skhueats.post.dto.response.PostListResponseDto;
@@ -23,6 +25,8 @@ import com.skhueats.post.repository.PostRepository;
 import com.skhueats.user.entity.User;
 import com.skhueats.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -99,6 +103,39 @@ public class PostService {
         List<Post> posts = postRepository.findAllByHostActiveFirst(user.getId());
 
         return createPostListResponse(posts);
+    }
+
+    public ParticipationHistoryPageResponseDto getMyHistory(String email, int page, int limit) {
+        validatePageRequest(page, limit);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+
+        PageRequest pageRequest = PageRequest.of(page - 1, limit);
+        Page<Participation> participationPage = participationRepository.findHistoryByUserId(
+                user.getId(),
+                ParticipationStatus.JOINED,
+                pageRequest
+        );
+
+        List<Participation> participations = participationPage.getContent();
+        Map<String, List<String>> categoriesByPostId = findFoodCategoriesByPostId(participations);
+
+        LocalDateTime now = LocalDateTime.now(KST_ZONE);
+        List<ParticipationHistoryResponseDto> data = participations.stream()
+                .map(participation -> ParticipationHistoryResponseDto.of(
+                        participation,
+                        categoriesByPostId.getOrDefault(participation.getPost().getId(), List.of()),
+                        canCancelParticipation(participation, now)
+                ))
+                .toList();
+
+        return ParticipationHistoryPageResponseDto.builder()
+                .totalCount(participationPage.getTotalElements())
+                .page(page)
+                .limit(limit)
+                .data(data)
+                .build();
     }
 
     public PostDetailResponseDto getPost(String email, String postId) {
@@ -271,6 +308,22 @@ public class PostService {
                 .toList();
     }
 
+    private Map<String, List<String>> findFoodCategoriesByPostId(List<Participation> participations) {
+        if (participations.isEmpty()) {
+            return Map.of();
+        }
+
+        List<String> postIds = participations.stream()
+                .map(participation -> participation.getPost().getId())
+                .toList();
+
+        return postFoodCategoryRepository.findAllByPostIdIn(postIds).stream()
+                .collect(Collectors.groupingBy(
+                        postFoodCategory -> postFoodCategory.getPost().getId(),
+                        Collectors.mapping(PostFoodCategory::getCategory, Collectors.toList())
+                ));
+    }
+
     private List<PostListResponseDto> createPostListResponse(List<Post> posts) {
         if (posts.isEmpty()) {
             return List.of();
@@ -337,6 +390,21 @@ public class PostService {
 
         if (!LocalDateTime.now(KST_ZONE).isBefore(cancelDeadline)) {
             throw new ApiException(ErrorCode.POST_CANCEL_TIME_EXPIRED);
+        }
+    }
+
+    private boolean canCancelParticipation(Participation participation, LocalDateTime now) {
+        Post post = participation.getPost();
+        LocalDateTime cancelDeadline = post.getMeetingTime().minusMinutes(30);
+
+        return participation.isJoined()
+                && post.getStatus() != PostStatus.CANCELLED
+                && now.isBefore(cancelDeadline);
+    }
+
+    private void validatePageRequest(int page, int limit) {
+        if (page < 1 || limit < 1) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST, "page와 limit은 1 이상이어야 합니다.");
         }
     }
 
