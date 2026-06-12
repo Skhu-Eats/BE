@@ -36,6 +36,8 @@ public class PostListResponseDto {
 
     private String status;
 
+    private String statusLabel;
+
     private LocalDateTime createdAt;
 
     public static PostListResponseDto of(Post post, List<String> foodCategories) {
@@ -50,7 +52,8 @@ public class PostListResponseDto {
                 .deadline(post.getDeadline())
                 .maxParticipants(post.getMaxParticipants())
                 .currentParticipants(post.getCurrentParticipants())
-                .status(post.getStatus().getDescription())
+                .status(post.getStatus().name())
+                .statusLabel(post.getStatus().getDescription())
                 .createdAt(post.getCreatedAt())
                 .build();
     }

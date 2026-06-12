@@ -1,7 +1,6 @@
 package com.skhueats.post.repository;
 
 import com.skhueats.post.entity.Post;
-import com.skhueats.post.entity.PostStatus;
 import com.skhueats.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -22,21 +21,31 @@ public interface PostRepository extends JpaRepository<Post, String> {
     @Query("SELECT p FROM Post p JOIN FETCH p.host WHERE p.id = :id")
     Optional<Post> findByIdWithHost(@Param("id") String id);
 
-    @Query("""
-            SELECT p FROM Post p
-            JOIN FETCH p.host
-            WHERE (:status IS NULL OR p.status = :status)
-              AND (:startHour IS NULL OR HOUR(p.meetingTime) >= :startHour)
-              AND (:endHour IS NULL OR HOUR(p.meetingTime) < :endHour)
+    @Query(value = """
+            SELECT p.* FROM posts p
+            WHERE (:status IS NULL OR LOWER(p.status) = LOWER(:status))
+              AND (:startHour IS NULL OR HOUR(p.meeting_time) >= :startHour)
+              AND (:endHour IS NULL OR HOUR(p.meeting_time) < :endHour)
               AND p.deadline >= :now
             ORDER BY p.deadline ASC
-            """)
+            """, nativeQuery = true)
     List<Post> findPostsByFilter(
-            @Param("status") PostStatus status,
+            @Param("status") String status,
             @Param("startHour") Integer startHour,
             @Param("endHour") Integer endHour,
             @Param("now") LocalDateTime now
     );
 
-    List<Post> findAllByHostOrderByMeetingTimeDesc(User host);
+    @Query(value = """
+            SELECT p.* FROM posts p
+            WHERE p.host_id = :hostId
+            ORDER BY
+              CASE LOWER(p.status)
+                WHEN 'open' THEN 0
+                WHEN 'closed' THEN 1
+                ELSE 2
+              END,
+              p.meeting_time DESC
+            """, nativeQuery = true)
+    List<Post> findAllByHostActiveFirst(@Param("hostId") String hostId);
 }

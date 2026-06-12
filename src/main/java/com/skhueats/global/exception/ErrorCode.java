@@ -10,6 +10,12 @@ public enum ErrorCode {
             "입력값 형식이 올바르지 않습니다."
     ),
 
+    INTERNAL_SERVER_ERROR(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            "SERVER_500",
+            "요청 처리 중 오류가 발생했습니다."
+    ),
+
     EMAIL_NOT_VERIFIED(
             HttpStatus.FORBIDDEN,
             "AUTH_403",

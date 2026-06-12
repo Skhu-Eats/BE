@@ -1,7 +1,5 @@
 package com.skhueats.post.entity;
 
-import com.skhueats.global.exception.ApiException;
-import com.skhueats.global.exception.ErrorCode;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
@@ -22,7 +20,7 @@ public class PostStatusConverter implements AttributeConverter<PostStatus, Strin
         try {
             return PostStatus.valueOf(dbData.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new ApiException(ErrorCode.INVALID_REQUEST, "모임 상태 값이 올바르지 않습니다.");
+            throw new IllegalStateException("데이터베이스의 모임 상태 값이 올바르지 않습니다: " + dbData, e);
         }
     }
 }

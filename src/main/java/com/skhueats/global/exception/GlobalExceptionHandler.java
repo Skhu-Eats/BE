@@ -1,14 +1,16 @@
 package com.skhueats.global.exception;
 
+import com.skhueats.global.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import com.skhueats.global.response.ErrorResponse;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -44,11 +46,13 @@ public class GlobalExceptionHandler {
                 request.getRequestURI().startsWith("/swagger-ui")) {
             throw new RuntimeException(e);
         }
+
+        log.error("Unhandled exception occurred.", e);
         ErrorResponse response = ErrorResponse.of(
-                ErrorCode.INVALID_REQUEST,
-                "요청 처리 중 오류가 발생했습니다.",
+                ErrorCode.INTERNAL_SERVER_ERROR,
+                ErrorCode.INTERNAL_SERVER_ERROR.getMessage(),
                 request.getRequestURI()
         );
-        return ResponseEntity.status(ErrorCode.INVALID_REQUEST.getStatus()).body(response);
+        return ResponseEntity.status(ErrorCode.INTERNAL_SERVER_ERROR.getStatus()).body(response);
     }
 }

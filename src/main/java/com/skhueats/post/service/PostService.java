@@ -22,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -78,7 +77,7 @@ public class PostService {
         Integer endHour = (slot == null) ? null : slot.getEndHour();
 
         List<Post> posts = postRepository.findPostsByFilter(
-                statusFilter, startHour, endHour, LocalDateTime.now(KST_ZONE)
+                statusFilter.name(), startHour, endHour, LocalDateTime.now(KST_ZONE)
         );
 
         return createPostListResponse(posts);
@@ -97,11 +96,7 @@ public class PostService {
             return List.of();
         }
 
-        List<Post> posts = postRepository.findAllByHostOrderByMeetingTimeDesc(user).stream()
-                .sorted(Comparator
-                        .comparingInt((Post post) -> getMyPostStatusOrder(post.getStatus()))
-                        .thenComparing(Post::getMeetingTime, Comparator.reverseOrder()))
-                .toList();
+        List<Post> posts = postRepository.findAllByHostActiveFirst(user.getId());
 
         return createPostListResponse(posts);
     }
@@ -217,14 +212,6 @@ public class PostService {
                         categoriesByPostId.getOrDefault(post.getId(), List.of())
                 ))
                 .toList();
-    }
-
-    private int getMyPostStatusOrder(PostStatus status) {
-        return switch (status) {
-            case OPEN -> 0;
-            case CLOSED -> 1;
-            case CANCELLED -> 2;
-        };
     }
 
     private MyPostRole resolveMyPostRole(String role) {
