@@ -44,7 +44,11 @@ public class GlobalExceptionHandler {
                 request.getRequestURI().startsWith("/swagger-ui")) {
             throw new RuntimeException(e);
         }
-        ErrorResponse response = ErrorResponse.of(ErrorCode.INVALID_REQUEST, e.getMessage(), request.getRequestURI());
+        ErrorResponse response = ErrorResponse.of(
+                ErrorCode.INVALID_REQUEST,
+                "요청 처리 중 오류가 발생했습니다.",
+                request.getRequestURI()
+        );
         return ResponseEntity.status(ErrorCode.INVALID_REQUEST.getStatus()).body(response);
     }
 }
