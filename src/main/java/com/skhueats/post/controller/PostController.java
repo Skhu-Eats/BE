@@ -3,6 +3,7 @@ package com.skhueats.post.controller;
 import com.skhueats.post.dto.request.CreatePostRequestDto;
 import com.skhueats.post.dto.request.UpdatePostRequestDto;
 import com.skhueats.post.dto.response.CreatePostResponseDto;
+import com.skhueats.post.dto.response.JoinPostResponseDto;
 import com.skhueats.post.dto.response.PostDetailResponseDto;
 import com.skhueats.post.dto.response.PostListResponseDto;
 import com.skhueats.post.service.PostService;
@@ -57,10 +58,27 @@ public class PostController {
     }
 
     @GetMapping("/{postId}")
-    public ResponseEntity<PostDetailResponseDto> getPost(@PathVariable("postId") String postId) {
-        PostDetailResponseDto response = postService.getPost(postId);
+    public ResponseEntity<PostDetailResponseDto> getPost(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable("postId") String postId
+    ) {
+        String email = userDetails.getUsername();
+
+        PostDetailResponseDto response = postService.getPost(email, postId);
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{postId}/join")
+    public ResponseEntity<JoinPostResponseDto> joinPost(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable("postId") String postId
+    ) {
+        String email = userDetails.getUsername();
+
+        JoinPostResponseDto response = postService.joinPost(email, postId);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PatchMapping("/{postId}")
