@@ -50,7 +50,7 @@ public class PostListResponseDto {
                 .deadline(post.getDeadline())
                 .maxParticipants(post.getMaxParticipants())
                 .currentParticipants(post.getCurrentParticipants())
-                .status(post.getStatus().name())
+                .status(post.getStatus().getDescription())
                 .createdAt(post.getCreatedAt())
                 .build();
     }

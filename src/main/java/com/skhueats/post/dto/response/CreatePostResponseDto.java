@@ -58,7 +58,7 @@ public class CreatePostResponseDto {
                 .currentParticipants(post.getCurrentParticipants())
                 .memo(post.getMemo())
                 .kakaoLink(post.getKakaoLink())
-                .status(post.getStatus().name())
+                .status(post.getStatus().getDescription())
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
                 .build();
