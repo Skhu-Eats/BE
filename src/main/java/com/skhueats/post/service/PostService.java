@@ -84,17 +84,8 @@ public class PostService {
     }
 
     public List<PostListResponseDto> getMyPosts(String email) {
-        return getMyPosts(email, "host");
-    }
-
-    public List<PostListResponseDto> getMyPosts(String email, String role) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
-
-        MyPostRole myPostRole = resolveMyPostRole(role);
-        if (myPostRole == MyPostRole.PARTICIPANT) {
-            return List.of();
-        }
 
         List<Post> posts = postRepository.findAllByHostActiveFirst(user.getId());
 
@@ -212,23 +203,6 @@ public class PostService {
                         categoriesByPostId.getOrDefault(post.getId(), List.of())
                 ))
                 .toList();
-    }
-
-    private MyPostRole resolveMyPostRole(String role) {
-        if (role == null || role.isBlank() || role.equalsIgnoreCase("host")) {
-            return MyPostRole.HOST;
-        }
-
-        if (role.equalsIgnoreCase("participant")) {
-            return MyPostRole.PARTICIPANT;
-        }
-
-        throw new ApiException(ErrorCode.INVALID_REQUEST, "role은 host 또는 participant만 사용할 수 있습니다.");
-    }
-
-    private enum MyPostRole {
-        HOST,
-        PARTICIPANT
     }
 
     private void validatePostHost(Post post, User user) {

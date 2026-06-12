@@ -13,7 +13,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -36,12 +35,11 @@ public class UserController {
 
     @GetMapping("/me/posts")
     public ResponseEntity<List<PostListResponseDto>> getMyPosts(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam(name = "role", required = false) String role
+            @AuthenticationPrincipal UserDetails userDetails
     ) {
         String email = userDetails.getUsername();
 
-        List<PostListResponseDto> response = postService.getMyPosts(email, role);
+        List<PostListResponseDto> response = postService.getMyPosts(email);
 
         return ResponseEntity.ok(response);
     }
