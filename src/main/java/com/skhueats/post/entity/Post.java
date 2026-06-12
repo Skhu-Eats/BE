@@ -118,6 +118,19 @@ public class Post {
         }
     }
 
+    public void cancelJoin() {
+        if (this.currentParticipants == null || this.currentParticipants <= 1) {
+            this.currentParticipants = 1;
+            return;
+        }
+
+        this.currentParticipants--;
+
+        if (this.status == PostStatus.CLOSED && !isFull()) {
+            this.status = PostStatus.OPEN;
+        }
+    }
+
     @PrePersist
     public void prePersist() {
         if (this.id == null) {

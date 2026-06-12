@@ -150,6 +150,40 @@ public class PostService {
     }
 
     @Transactional
+    public void cancelJoin(String email, String postId) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+        Post post = findPostForUpdate(postId);
+
+        if (post.isHostedBy(user)) {
+            throw new ApiException(ErrorCode.POST_FORBIDDEN);
+        }
+
+        Participation participation = participationRepository.findByPostAndUser(post, user)
+                .filter(Participation::isJoined)
+                .orElseThrow(() -> new ApiException(ErrorCode.POST_NOT_JOINED));
+
+        if (post.getStatus() == PostStatus.CANCELLED) {
+            throw new ApiException(ErrorCode.POST_RECRUITMENT_CLOSED);
+        }
+
+        validateJoinCancelable(post);
+
+        participation.cancel();
+        post.cancelJoin();
+        user.decreaseJoinCount();
+
+        notificationService.createNotification(
+                post.getHost(),
+                NotificationType.POST_LEAVE,
+                "모임 참여 취소",
+                user.getNickname() + "님이 '" + post.getTitle() + "' 모임 참여를 취소했어요.",
+                "POST",
+                post.getId()
+        );
+    }
+
+    @Transactional
     public PostDetailResponseDto updatePost(String email, String postId, UpdatePostRequestDto requestDto) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
@@ -295,6 +329,14 @@ public class PostService {
 
         if (post.isFull()) {
             throw new ApiException(ErrorCode.POST_FULL);
+        }
+    }
+
+    private void validateJoinCancelable(Post post) {
+        LocalDateTime cancelDeadline = post.getMeetingTime().minusMinutes(30);
+
+        if (!LocalDateTime.now(KST_ZONE).isBefore(cancelDeadline)) {
+            throw new ApiException(ErrorCode.POST_CANCEL_TIME_EXPIRED);
         }
     }
 

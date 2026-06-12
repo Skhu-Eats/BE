@@ -81,6 +81,18 @@ public class PostController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @DeleteMapping("/{postId}/leave")
+    public ResponseEntity<Void> cancelJoin(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable("postId") String postId
+    ) {
+        String email = userDetails.getUsername();
+
+        postService.cancelJoin(email, postId);
+
+        return ResponseEntity.noContent().build();
+    }
+
     @PatchMapping("/{postId}")
     public ResponseEntity<PostDetailResponseDto> updatePost(
             @AuthenticationPrincipal UserDetails userDetails,
