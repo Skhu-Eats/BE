@@ -48,12 +48,26 @@ public class PostDetailResponseDto {
 
     private String statusLabel;
 
+    private String joinStatus;
+
+    private String joinButtonLabel;
+
+    private Boolean canJoin;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 
     public static PostDetailResponseDto of(Post post, List<String> foodCategories) {
-        return PostDetailResponseDto.builder()
+        return of(post, foodCategories, null);
+    }
+
+    public static PostDetailResponseDto of(
+            Post post,
+            List<String> foodCategories,
+            PostJoinStatus joinStatus
+    ) {
+        PostDetailResponseDtoBuilder builder = PostDetailResponseDto.builder()
                 .postId(post.getId())
                 .hostId(post.getHost().getId())
                 .hostNickname(post.getHost().getNickname())
@@ -72,7 +86,14 @@ public class PostDetailResponseDto {
                 .status(post.getStatus().name())
                 .statusLabel(post.getStatus().getDescription())
                 .createdAt(post.getCreatedAt())
-                .updatedAt(post.getUpdatedAt())
-                .build();
+                .updatedAt(post.getUpdatedAt());
+
+        if (joinStatus != null) {
+            builder.joinStatus(joinStatus.name())
+                    .joinButtonLabel(joinStatus.getButtonLabel())
+                    .canJoin(joinStatus.canJoin());
+        }
+
+        return builder.build();
     }
 }

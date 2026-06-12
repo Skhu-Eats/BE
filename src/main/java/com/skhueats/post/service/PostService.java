@@ -2,15 +2,22 @@ package com.skhueats.post.service;
 
 import com.skhueats.global.exception.ApiException;
 import com.skhueats.global.exception.ErrorCode;
+import com.skhueats.notification.entity.NotificationType;
+import com.skhueats.notification.service.NotificationService;
 import com.skhueats.post.dto.request.CreatePostRequestDto;
 import com.skhueats.post.dto.request.UpdatePostRequestDto;
 import com.skhueats.post.dto.response.CreatePostResponseDto;
+import com.skhueats.post.dto.response.JoinPostResponseDto;
 import com.skhueats.post.dto.response.PostDetailResponseDto;
+import com.skhueats.post.dto.response.PostJoinStatus;
 import com.skhueats.post.dto.response.PostListResponseDto;
+import com.skhueats.post.entity.Participation;
+import com.skhueats.post.entity.ParticipationStatus;
 import com.skhueats.post.entity.Post;
 import com.skhueats.post.entity.PostFoodCategory;
 import com.skhueats.post.entity.PostStatus;
 import com.skhueats.post.entity.TimeSlot;
+import com.skhueats.post.repository.ParticipationRepository;
 import com.skhueats.post.repository.PostFoodCategoryRepository;
 import com.skhueats.post.repository.PostRepository;
 import com.skhueats.user.entity.User;
@@ -36,7 +43,9 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final PostFoodCategoryRepository postFoodCategoryRepository;
+    private final ParticipationRepository participationRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public CreatePostResponseDto createPost(String email, CreatePostRequestDto requestDto) {
@@ -92,11 +101,52 @@ public class PostService {
         return createPostListResponse(posts);
     }
 
+    public PostDetailResponseDto getPost(String email, String postId) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+        Post post = findPost(postId);
+        List<String> foodCategories = findFoodCategories(post);
+        PostJoinStatus joinStatus = resolveJoinStatus(post, user);
+
+        return PostDetailResponseDto.of(post, foodCategories, joinStatus);
+    }
+
     public PostDetailResponseDto getPost(String postId) {
         Post post = findPost(postId);
         List<String> foodCategories = findFoodCategories(post);
 
         return PostDetailResponseDto.of(post, foodCategories);
+    }
+
+    @Transactional
+    public JoinPostResponseDto joinPost(String email, String postId) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+        Post post = findPostForUpdate(postId);
+
+        validateJoinable(post, user);
+
+        Participation participation = participationRepository.findByPostAndUser(post, user)
+                .map(existing -> {
+                    existing.rejoin();
+                    return existing;
+                })
+                .orElseGet(() -> new Participation(post, user));
+        participationRepository.save(participation);
+
+        post.join();
+        user.increaseJoinCount();
+
+        notificationService.createNotification(
+                post.getHost(),
+                NotificationType.POST_JOIN,
+                "새로운 참여 신청",
+                user.getNickname() + "님이 '" + post.getTitle() + "' 모임에 참여했어요.",
+                "POST",
+                post.getId()
+        );
+
+        return JoinPostResponseDto.of(post, PostJoinStatus.JOINED);
     }
 
     @Transactional
@@ -176,6 +226,11 @@ public class PostService {
                 .orElseThrow(() -> new ApiException(ErrorCode.POST_NOT_FOUND));
     }
 
+    private Post findPostForUpdate(String postId) {
+        return postRepository.findByIdWithHostForUpdate(postId)
+                .orElseThrow(() -> new ApiException(ErrorCode.POST_NOT_FOUND));
+    }
+
     private List<String> findFoodCategories(Post post) {
         return postFoodCategoryRepository.findAllByPostId(post.getId()).stream()
                 .map(PostFoodCategory::getCategory)
@@ -203,6 +258,48 @@ public class PostService {
                         categoriesByPostId.getOrDefault(post.getId(), List.of())
                 ))
                 .toList();
+    }
+
+    private PostJoinStatus resolveJoinStatus(Post post, User user) {
+        if (post.isHostedBy(user)) {
+            return PostJoinStatus.HOST;
+        }
+
+        if (participationRepository.existsByPostAndUserAndStatus(post, user, ParticipationStatus.JOINED)) {
+            return PostJoinStatus.JOINED;
+        }
+
+        if (isDeadlinePassed(post) || post.isClosed() || post.isFull()) {
+            return PostJoinStatus.FULL;
+        }
+
+        return PostJoinStatus.AVAILABLE;
+    }
+
+    private void validateJoinable(Post post, User user) {
+        if (post.isHostedBy(user)) {
+            throw new ApiException(ErrorCode.POST_SELF_JOIN_NOT_ALLOWED);
+        }
+
+        if (participationRepository.existsByPostAndUserAndStatus(post, user, ParticipationStatus.JOINED)) {
+            throw new ApiException(ErrorCode.POST_ALREADY_JOINED);
+        }
+
+        if (isDeadlinePassed(post)) {
+            throw new ApiException(ErrorCode.POST_RECRUITMENT_CLOSED);
+        }
+
+        if (post.isClosed()) {
+            throw new ApiException(ErrorCode.POST_RECRUITMENT_CLOSED);
+        }
+
+        if (post.isFull()) {
+            throw new ApiException(ErrorCode.POST_FULL);
+        }
+    }
+
+    private boolean isDeadlinePassed(Post post) {
+        return post.getDeadline().isBefore(LocalDateTime.now(KST_ZONE));
     }
 
     private void validatePostHost(Post post, User user) {

@@ -98,6 +98,26 @@ public class Post {
         this.kakaoLink = kakaoLink;
     }
 
+    public boolean isHostedBy(User user) {
+        return this.host.getId().equals(user.getId());
+    }
+
+    public boolean isFull() {
+        return this.currentParticipants >= this.maxParticipants;
+    }
+
+    public boolean isClosed() {
+        return this.status != PostStatus.OPEN;
+    }
+
+    public void join() {
+        this.currentParticipants++;
+
+        if (isFull()) {
+            this.status = PostStatus.CLOSED;
+        }
+    }
+
     @PrePersist
     public void prePersist() {
         if (this.id == null) {

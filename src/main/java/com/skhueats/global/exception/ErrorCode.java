@@ -128,6 +128,30 @@ public enum ErrorCode {
             HttpStatus.TOO_MANY_REQUESTS,
             "POST_429_DAILY_LIMIT",
             "하루 최대 3개까지 모집글을 작성할 수 있습니다."
+    ),
+
+    POST_SELF_JOIN_NOT_ALLOWED(
+            HttpStatus.BAD_REQUEST,
+            "POST_400_SELF_JOIN",
+            "본인이 만든 모임에는 참여할 수 없습니다."
+    ),
+
+    POST_ALREADY_JOINED(
+            HttpStatus.BAD_REQUEST,
+            "POST_400_ALREADY_JOINED",
+            "이미 참여 중인 모임입니다."
+    ),
+
+    POST_RECRUITMENT_CLOSED(
+            HttpStatus.CONFLICT,
+            "POST_409_CLOSED",
+            "모집이 마감된 모임입니다."
+    ),
+
+    POST_FULL(
+            HttpStatus.CONFLICT,
+            "POST_409_FULL",
+            "모집 인원이 가득 찼습니다."
     );
 
     private final HttpStatus status;
