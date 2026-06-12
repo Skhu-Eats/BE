@@ -155,9 +155,17 @@ public class PostService {
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
         Post post = findPostForUpdate(postId);
 
+        if (post.isHostedBy(user)) {
+            throw new ApiException(ErrorCode.POST_FORBIDDEN);
+        }
+
         Participation participation = participationRepository.findByPostAndUser(post, user)
                 .filter(Participation::isJoined)
                 .orElseThrow(() -> new ApiException(ErrorCode.POST_NOT_JOINED));
+
+        if (post.getStatus() == PostStatus.CANCELLED) {
+            throw new ApiException(ErrorCode.POST_RECRUITMENT_CLOSED);
+        }
 
         validateJoinCancelable(post);
 
