@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -79,26 +80,30 @@ public class PostService {
         List<Post> posts = postRepository.findPostsByFilter(
                 statusFilter, startHour, endHour, LocalDateTime.now(KST_ZONE)
         );
-        if (posts.isEmpty()) {
+
+        return createPostListResponse(posts);
+    }
+
+    public List<PostListResponseDto> getMyPosts(String email) {
+        return getMyPosts(email, "host");
+    }
+
+    public List<PostListResponseDto> getMyPosts(String email, String role) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+
+        MyPostRole myPostRole = resolveMyPostRole(role);
+        if (myPostRole == MyPostRole.PARTICIPANT) {
             return List.of();
         }
 
-        List<String> postIds = posts.stream()
-                .map(Post::getId)
+        List<Post> posts = postRepository.findAllByHostOrderByMeetingTimeDesc(user).stream()
+                .sorted(Comparator
+                        .comparingInt((Post post) -> getMyPostStatusOrder(post.getStatus()))
+                        .thenComparing(Post::getMeetingTime, Comparator.reverseOrder()))
                 .toList();
 
-        Map<String, List<String>> categoriesByPostId = postFoodCategoryRepository.findAllByPostIdIn(postIds).stream()
-                .collect(Collectors.groupingBy(
-                        postFoodCategory -> postFoodCategory.getPost().getId(),
-                        Collectors.mapping(PostFoodCategory::getCategory, Collectors.toList())
-                ));
-
-        return posts.stream()
-                .map(post -> PostListResponseDto.of(
-                        post,
-                        categoriesByPostId.getOrDefault(post.getId(), List.of())
-                ))
-                .toList();
+        return createPostListResponse(posts);
     }
 
     public PostDetailResponseDto getPost(String postId) {
@@ -189,6 +194,54 @@ public class PostService {
         return postFoodCategoryRepository.findAllByPostId(post.getId()).stream()
                 .map(PostFoodCategory::getCategory)
                 .toList();
+    }
+
+    private List<PostListResponseDto> createPostListResponse(List<Post> posts) {
+        if (posts.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> postIds = posts.stream()
+                .map(Post::getId)
+                .toList();
+
+        Map<String, List<String>> categoriesByPostId = postFoodCategoryRepository.findAllByPostIdIn(postIds).stream()
+                .collect(Collectors.groupingBy(
+                        postFoodCategory -> postFoodCategory.getPost().getId(),
+                        Collectors.mapping(PostFoodCategory::getCategory, Collectors.toList())
+                ));
+
+        return posts.stream()
+                .map(post -> PostListResponseDto.of(
+                        post,
+                        categoriesByPostId.getOrDefault(post.getId(), List.of())
+                ))
+                .toList();
+    }
+
+    private int getMyPostStatusOrder(PostStatus status) {
+        return switch (status) {
+            case OPEN -> 0;
+            case CLOSED -> 1;
+            case CANCELLED -> 2;
+        };
+    }
+
+    private MyPostRole resolveMyPostRole(String role) {
+        if (role == null || role.isBlank() || role.equalsIgnoreCase("host")) {
+            return MyPostRole.HOST;
+        }
+
+        if (role.equalsIgnoreCase("participant")) {
+            return MyPostRole.PARTICIPANT;
+        }
+
+        throw new ApiException(ErrorCode.INVALID_REQUEST, "role은 host 또는 participant만 사용할 수 있습니다.");
+    }
+
+    private enum MyPostRole {
+        HOST,
+        PARTICIPANT
     }
 
     private void validatePostHost(Post post, User user) {
