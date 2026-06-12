@@ -60,6 +60,10 @@ public class Participation {
         return this.status == ParticipationStatus.JOINED;
     }
 
+    public void rejoin() {
+        this.status = ParticipationStatus.JOINED;
+    }
+
     @PrePersist
     public void prePersist() {
         if (this.id == null) {

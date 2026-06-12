@@ -112,7 +112,7 @@ public class PostService {
     }
 
     public PostDetailResponseDto getPost(String postId) {
-        Post post = findPostForUpdate(postId);
+        Post post = findPost(postId);
         List<String> foodCategories = findFoodCategories(post);
 
         return PostDetailResponseDto.of(post, foodCategories);
@@ -122,11 +122,16 @@ public class PostService {
     public JoinPostResponseDto joinPost(String email, String postId) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
-        Post post = findPost(postId);
+        Post post = findPostForUpdate(postId);
 
         validateJoinable(post, user);
 
-        Participation participation = new Participation(post, user);
+        Participation participation = participationRepository.findByPostAndUser(post, user)
+                .map(existing -> {
+                    existing.rejoin();
+                    return existing;
+                })
+                .orElseGet(() -> new Participation(post, user));
         participationRepository.save(participation);
 
         post.join();
@@ -264,7 +269,7 @@ public class PostService {
             return PostJoinStatus.JOINED;
         }
 
-        if (post.isClosed() || post.isFull()) {
+        if (isDeadlinePassed(post) || post.isClosed() || post.isFull()) {
             return PostJoinStatus.FULL;
         }
 
@@ -280,6 +285,10 @@ public class PostService {
             throw new ApiException(ErrorCode.POST_ALREADY_JOINED);
         }
 
+        if (isDeadlinePassed(post)) {
+            throw new ApiException(ErrorCode.POST_RECRUITMENT_CLOSED);
+        }
+
         if (post.isClosed()) {
             throw new ApiException(ErrorCode.POST_RECRUITMENT_CLOSED);
         }
@@ -287,6 +296,10 @@ public class PostService {
         if (post.isFull()) {
             throw new ApiException(ErrorCode.POST_FULL);
         }
+    }
+
+    private boolean isDeadlinePassed(Post post) {
+        return post.getDeadline().isBefore(LocalDateTime.now(KST_ZONE));
     }
 
     private void validatePostHost(Post post, User user) {
