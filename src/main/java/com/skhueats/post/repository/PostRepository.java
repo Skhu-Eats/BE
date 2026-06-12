@@ -2,7 +2,9 @@ package com.skhueats.post.repository;
 
 import com.skhueats.post.entity.Post;
 import com.skhueats.user.entity.User;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -20,6 +22,10 @@ public interface PostRepository extends JpaRepository<Post, String> {
 
     @Query("SELECT p FROM Post p JOIN FETCH p.host WHERE p.id = :id")
     Optional<Post> findByIdWithHost(@Param("id") String id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Post p JOIN FETCH p.host WHERE p.id = :id")
+    Optional<Post> findByIdWithHostForUpdate(@Param("id") String id);
 
     @Query(value = """
             SELECT p.* FROM posts p

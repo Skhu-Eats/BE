@@ -87,4 +87,12 @@ public class User {
 
         this.postCount--;
     }
+
+    public void increaseJoinCount() {
+        if (this.joinCount == null) {
+            this.joinCount = 0;
+        }
+
+        this.joinCount++;
+    }
 }
