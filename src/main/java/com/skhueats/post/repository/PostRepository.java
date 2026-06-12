@@ -37,4 +37,6 @@ public interface PostRepository extends JpaRepository<Post, String> {
             @Param("endHour") Integer endHour,
             @Param("now") LocalDateTime now
     );
+
+    List<Post> findAllByHostOrderByMeetingTimeDesc(User host);
 }
