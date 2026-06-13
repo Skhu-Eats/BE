@@ -118,6 +118,23 @@ public class AuthService {
         redisVerificationService.markPasswordResetEmailAsVerified(normalizedEmail);
     }
 
+    @Transactional
+    public void resetPassword(String email, String newPassword) {
+        String normalizedEmail = normalizeEmail(email);
+        validateSchoolEmail(normalizedEmail);
+
+        if (!redisVerificationService.isPasswordResetEmailVerified(normalizedEmail)) {
+            throw new ApiException(ErrorCode.PASSWORD_RESET_NOT_VERIFIED);
+        }
+
+        User user = userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        refreshTokenRepository.deleteByEmail(normalizedEmail);
+        redisVerificationService.consumePasswordResetVerifiedEmail(normalizedEmail);
+    }
+
     public void verifyCode(String email, String code) {
         String normalizedEmail = normalizeEmail(email);
         validateSchoolEmail(normalizedEmail);

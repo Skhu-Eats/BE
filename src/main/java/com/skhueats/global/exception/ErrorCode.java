@@ -22,6 +22,12 @@ public enum ErrorCode {
             "이메일 인증을 먼저 완료해주세요."
     ),
 
+    PASSWORD_RESET_NOT_VERIFIED(
+            HttpStatus.FORBIDDEN,
+            "AUTH_403",
+            "비밀번호 재설정 인증을 완료해주세요."
+    ),
+
     INVALID_SCHOOL_EMAIL(
             HttpStatus.BAD_REQUEST,
             "AUTH_400_EMAIL",
