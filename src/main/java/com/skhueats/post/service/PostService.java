@@ -265,9 +265,27 @@ public class PostService {
     public void deletePost(String email, String postId) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
-        Post post = findPost(postId);
+        Post post = findPostForUpdate(postId);
 
         validatePostHost(post, user);
+
+        List<Participation> participants = participationRepository.findAllByPostAndStatusWithUser(
+                post,
+                ParticipationStatus.JOINED
+        );
+
+        participants.forEach(participation -> {
+            User participant = participation.getUser();
+            participant.decreaseJoinCount();
+            notificationService.createNotification(
+                    participant,
+                    NotificationType.POST_CANCELLED,
+                    "참여한 모임이 취소되었어요",
+                    post.getTitle() + " 모임이 모집자에 의해 취소되었습니다.",
+                    null,
+                    null
+            );
+        });
 
         postFoodCategoryRepository.deleteByPostId(post.getId());
         postRepository.delete(post);

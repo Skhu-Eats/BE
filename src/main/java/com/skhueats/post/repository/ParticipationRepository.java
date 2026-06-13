@@ -31,6 +31,17 @@ public interface ParticipationRepository extends JpaRepository<Participation, St
             @Param("status") ParticipationStatus status
     );
 
+    @Query("""
+            SELECT p FROM Participation p
+            JOIN FETCH p.user
+            WHERE p.post = :post
+              AND p.status = :status
+            """)
+    List<Participation> findAllByPostAndStatusWithUser(
+            @Param("post") Post post,
+            @Param("status") ParticipationStatus status
+    );
+
     @Query(
             value = """
                     SELECT p FROM Participation p
