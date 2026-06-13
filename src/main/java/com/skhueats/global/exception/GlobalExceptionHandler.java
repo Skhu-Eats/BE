@@ -47,6 +47,11 @@ public class GlobalExceptionHandler {
         String parameterName = e.getName();
         String message = parameterName + " 형식이 올바르지 않습니다.";
 
+        Throwable cause = e.getMostSpecificCause();
+        if (cause instanceof ApiException apiException) {
+            message = apiException.getMessage();
+        }
+
         ErrorResponse response = ErrorResponse.of(ErrorCode.INVALID_REQUEST, message, request.getRequestURI());
         return ResponseEntity.status(ErrorCode.INVALID_REQUEST.getStatus()).body(response);
     }

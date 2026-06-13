@@ -305,6 +305,8 @@ public class PostService {
     private List<String> normalizeFoodCategories(List<String> foodCategories) {
         return foodCategories.stream()
                 .map(String::trim)
+                .map(FoodCategory::from)
+                .map(FoodCategory::getLabel)
                 .distinct()
                 .toList();
     }
