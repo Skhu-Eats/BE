@@ -76,6 +76,23 @@ public class AuthService {
         mailService.sendVerificationCode(normalizedEmail, code);
     }
 
+    public void sendPasswordResetCode(String email) {
+        String normalizedEmail = normalizeEmail(email);
+        validateSchoolEmail(normalizedEmail);
+
+        if (!userRepository.existsByEmail(normalizedEmail)) {
+            throw new ApiException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        if (redisVerificationService.isResendBlocked(normalizedEmail)) {
+            throw new ApiException(ErrorCode.VERIFICATION_RESEND_BLOCKED);
+        }
+
+        String code = generateVerificationCode();
+        redisVerificationService.saveVerificationCode(normalizedEmail, code);
+        mailService.sendVerificationCode(normalizedEmail, code);
+    }
+
     public void verifyCode(String email, String code) {
         String normalizedEmail = normalizeEmail(email);
         validateSchoolEmail(normalizedEmail);
