@@ -93,8 +93,29 @@ public class AuthService {
         }
 
         String code = generateVerificationCode();
-        redisVerificationService.saveVerificationCode(normalizedEmail, code);
+        redisVerificationService.savePasswordResetVerificationCode(normalizedEmail, code);
         mailService.sendVerificationCode(normalizedEmail, code);
+    }
+
+    public void verifyPasswordResetCode(String email, String code) {
+        String normalizedEmail = normalizeEmail(email);
+        validateSchoolEmail(normalizedEmail);
+
+        if (redisVerificationService.isLocked(normalizedEmail)) {
+            throw new ApiException(ErrorCode.VERIFICATION_ATTEMPT_LOCKED);
+        }
+
+        if (!redisVerificationService.passwordResetCodeExists(normalizedEmail)) {
+            throw new ApiException(ErrorCode.VERIFICATION_CODE_EXPIRED);
+        }
+
+        boolean verified = redisVerificationService.verifyPasswordResetCode(normalizedEmail, code);
+
+        if (!verified) {
+            throw new ApiException(ErrorCode.VERIFICATION_CODE_MISMATCH);
+        }
+
+        redisVerificationService.markPasswordResetEmailAsVerified(normalizedEmail);
     }
 
     public void verifyCode(String email, String code) {
