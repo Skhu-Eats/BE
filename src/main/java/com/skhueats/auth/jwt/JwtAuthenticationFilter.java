@@ -35,6 +35,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/auth/register",
             "/auth/send-code",
             "/auth/password/reset/send-code",
+            "/auth/password/reset/verify-code",
             "/auth/verify-code",
             "/auth/login",
             "/auth/refresh",
