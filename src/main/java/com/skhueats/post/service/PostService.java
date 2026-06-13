@@ -274,16 +274,18 @@ public class PostService {
                 ParticipationStatus.JOINED
         );
 
-        participants.stream()
-                .map(Participation::getUser)
-                .forEach(participant -> notificationService.createNotification(
-                        participant,
-                        NotificationType.POST_CANCELLED,
-                        "참여한 모임이 취소되었어요",
-                        post.getTitle() + " 모임이 모집자에 의해 취소되었습니다.",
-                        null,
-                        null
-                ));
+        participants.forEach(participation -> {
+            User participant = participation.getUser();
+            participant.decreaseJoinCount();
+            notificationService.createNotification(
+                    participant,
+                    NotificationType.POST_CANCELLED,
+                    "참여한 모임이 취소되었어요",
+                    post.getTitle() + " 모임이 모집자에 의해 취소되었습니다.",
+                    null,
+                    null
+            );
+        });
 
         postFoodCategoryRepository.deleteByPostId(post.getId());
         postRepository.delete(post);
