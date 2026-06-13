@@ -13,6 +13,8 @@ import com.skhueats.post.dto.response.ParticipationHistoryResponseDto;
 import com.skhueats.post.dto.response.PostDetailResponseDto;
 import com.skhueats.post.dto.response.PostJoinStatus;
 import com.skhueats.post.dto.response.PostListResponseDto;
+import com.skhueats.post.dto.response.PostParticipantResponseDto;
+import com.skhueats.post.entity.FoodCategory;
 import com.skhueats.post.entity.Participation;
 import com.skhueats.post.entity.ParticipationStatus;
 import com.skhueats.post.entity.Post;
@@ -83,14 +85,27 @@ public class PostService {
         return CreatePostResponseDto.of(savedPost, foodCategories);
     }
 
-    public List<PostListResponseDto> getPosts(String timeSlot, String status) {
+    public List<PostListResponseDto> getPosts(
+            String timeSlot,
+            String status,
+            String location,
+            Integer maxParticipants,
+            FoodCategory foodCategory
+    ) {
         PostStatus statusFilter = resolveStatus(status);
         TimeSlot slot = TimeSlot.from(timeSlot);
+        validateMaxParticipantsFilter(maxParticipants);
         Integer startHour = (slot == null) ? null : slot.getStartHour();
         Integer endHour = (slot == null) ? null : slot.getEndHour();
 
         List<Post> posts = postRepository.findPostsByFilter(
-                statusFilter.name(), startHour, endHour, LocalDateTime.now(KST_ZONE)
+                statusFilter.name(),
+                startHour,
+                endHour,
+                normalizeNullable(location),
+                maxParticipants,
+                foodCategory == null ? null : foodCategory.getLabel(),
+                LocalDateTime.now(KST_ZONE)
         );
 
         return createPostListResponse(posts);
@@ -144,8 +159,10 @@ public class PostService {
         Post post = findPost(postId);
         List<String> foodCategories = findFoodCategories(post);
         PostJoinStatus joinStatus = resolveJoinStatus(post, user);
+        List<PostParticipantResponseDto> participants = findParticipants(post);
+        boolean kakaoLinkVisible = canViewKakaoLink(post, user);
 
-        return PostDetailResponseDto.of(post, foodCategories, joinStatus);
+        return PostDetailResponseDto.of(post, foodCategories, joinStatus, participants, kakaoLinkVisible);
     }
 
     public PostDetailResponseDto getPost(String postId) {
@@ -241,7 +258,7 @@ public class PostService {
         List<String> foodCategories = normalizeFoodCategories(requestDto.getFoodCategories());
         replaceFoodCategories(post, foodCategories);
 
-        return PostDetailResponseDto.of(post, foodCategories);
+        return PostDetailResponseDto.of(post, foodCategories, null, findParticipants(post), true);
     }
 
     @Transactional
@@ -288,8 +305,18 @@ public class PostService {
     private List<String> normalizeFoodCategories(List<String> foodCategories) {
         return foodCategories.stream()
                 .map(String::trim)
+                .map(FoodCategory::from)
+                .map(FoodCategory::getLabel)
                 .distinct()
                 .toList();
+    }
+
+    private String normalizeNullable(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+
+        return value.trim();
     }
 
     private Post findPost(String postId) {
@@ -305,6 +332,13 @@ public class PostService {
     private List<String> findFoodCategories(Post post) {
         return postFoodCategoryRepository.findAllByPostId(post.getId()).stream()
                 .map(PostFoodCategory::getCategory)
+                .toList();
+    }
+
+    private List<PostParticipantResponseDto> findParticipants(Post post) {
+        return participationRepository.findAllByPostIdAndStatusWithUser(post.getId(), ParticipationStatus.JOINED)
+                .stream()
+                .map(participation -> PostParticipantResponseDto.of(participation.getUser()))
                 .toList();
     }
 
@@ -363,6 +397,11 @@ public class PostService {
         return PostJoinStatus.AVAILABLE;
     }
 
+    private boolean canViewKakaoLink(Post post, User user) {
+        return post.isHostedBy(user)
+                || participationRepository.existsByPostAndUserAndStatus(post, user, ParticipationStatus.JOINED);
+    }
+
     private void validateJoinable(Post post, User user) {
         if (post.isHostedBy(user)) {
             throw new ApiException(ErrorCode.POST_SELF_JOIN_NOT_ALLOWED);
@@ -405,6 +444,12 @@ public class PostService {
     private void validatePageRequest(int page, int limit) {
         if (page < 1 || limit < 1) {
             throw new ApiException(ErrorCode.INVALID_REQUEST, "page와 limit은 1 이상이어야 합니다.");
+        }
+    }
+
+    private void validateMaxParticipantsFilter(Integer maxParticipants) {
+        if (maxParticipants != null && (maxParticipants < 2 || maxParticipants > 4)) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST, "max_participants는 2~4만 허용됩니다.");
         }
     }
 

@@ -44,6 +44,10 @@ public class PostDetailResponseDto {
 
     private String kakaoLink;
 
+    private Boolean kakaoLinkVisible;
+
+    private List<PostParticipantResponseDto> participants;
+
     private String status;
 
     private String statusLabel;
@@ -59,13 +63,23 @@ public class PostDetailResponseDto {
     private LocalDateTime updatedAt;
 
     public static PostDetailResponseDto of(Post post, List<String> foodCategories) {
-        return of(post, foodCategories, null);
+        return of(post, foodCategories, null, List.of(), false);
     }
 
     public static PostDetailResponseDto of(
             Post post,
             List<String> foodCategories,
             PostJoinStatus joinStatus
+    ) {
+        return of(post, foodCategories, joinStatus, List.of(), false);
+    }
+
+    public static PostDetailResponseDto of(
+            Post post,
+            List<String> foodCategories,
+            PostJoinStatus joinStatus,
+            List<PostParticipantResponseDto> participants,
+            boolean kakaoLinkVisible
     ) {
         PostDetailResponseDtoBuilder builder = PostDetailResponseDto.builder()
                 .postId(post.getId())
@@ -82,7 +96,9 @@ public class PostDetailResponseDto {
                 .maxParticipants(post.getMaxParticipants())
                 .currentParticipants(post.getCurrentParticipants())
                 .memo(post.getMemo())
-                .kakaoLink(post.getKakaoLink())
+                .kakaoLink(kakaoLinkVisible ? post.getKakaoLink() : null)
+                .kakaoLinkVisible(kakaoLinkVisible)
+                .participants(participants)
                 .status(post.getStatus().name())
                 .statusLabel(post.getStatus().getDescription())
                 .createdAt(post.getCreatedAt())

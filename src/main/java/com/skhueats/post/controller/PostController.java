@@ -6,6 +6,7 @@ import com.skhueats.post.dto.response.CreatePostResponseDto;
 import com.skhueats.post.dto.response.JoinPostResponseDto;
 import com.skhueats.post.dto.response.PostDetailResponseDto;
 import com.skhueats.post.dto.response.PostListResponseDto;
+import com.skhueats.post.entity.FoodCategory;
 import com.skhueats.post.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -39,9 +40,18 @@ public class PostController {
     @GetMapping
     public ResponseEntity<List<PostListResponseDto>> getPosts(
             @RequestParam(name = "time_slot", required = false) String timeSlot,
-            @RequestParam(name = "status", required = false) String status
+            @RequestParam(name = "status", required = false) String status,
+            @RequestParam(name = "location", required = false) String location,
+            @RequestParam(name = "max_participants", required = false) Integer maxParticipants,
+            @RequestParam(name = "food_category", required = false) FoodCategory foodCategory
     ) {
-        List<PostListResponseDto> posts = postService.getPosts(timeSlot, status);
+        List<PostListResponseDto> posts = postService.getPosts(
+                timeSlot,
+                status,
+                location,
+                maxParticipants,
+                foodCategory
+        );
 
         return ResponseEntity.ok(posts);
     }
