@@ -38,6 +38,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/auth/register",
                                 "/auth/send-code",
+                                "/auth/password/reset/send-code",
                                 "/auth/verify-code",
                                 "/auth/login",
                                 "/auth/refresh",

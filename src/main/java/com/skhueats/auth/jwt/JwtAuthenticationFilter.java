@@ -34,6 +34,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final List<String> PUBLIC_PATHS = List.of(
             "/auth/register",
             "/auth/send-code",
+            "/auth/password/reset/send-code",
             "/auth/verify-code",
             "/auth/login",
             "/auth/refresh",
