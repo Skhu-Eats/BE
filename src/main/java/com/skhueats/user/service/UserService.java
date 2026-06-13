@@ -47,20 +47,18 @@ public class UserService {
         return createMyProfileResponse(user);
     }
 
-    public MyPageResponseDto getMyPage(int historyLimit) {
+    public MyPageResponseDto getMyPage(String email, int historyLimit) {
         validateHistoryLimit(historyLimit);
-
-        String email = getCurrentUserEmail();
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
 
         List<String> foodCategories = userFoodPreferenceRepository.findCategoriesByUser(user);
-        List<Participation> recentParticipations = participationRepository.findHistoryByUserId(
+        List<Participation> recentParticipations = participationRepository.findHistoryPreviewByUserId(
                 user.getId(),
                 ParticipationStatus.JOINED,
                 PageRequest.of(0, historyLimit)
-        ).getContent();
+        );
 
         Map<String, List<String>> categoriesByPostId = findFoodCategoriesByPostId(recentParticipations);
         List<MyPageHistoryPreviewResponseDto> recentHistories = recentParticipations.stream()
@@ -116,6 +114,7 @@ public class UserService {
 
         List<String> postIds = participations.stream()
                 .map(participation -> participation.getPost().getId())
+                .distinct()
                 .toList();
 
         return postFoodCategoryRepository.findAllByPostIdIn(postIds).stream()

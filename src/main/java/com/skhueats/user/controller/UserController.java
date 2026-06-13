@@ -40,9 +40,13 @@ public class UserController {
 
     @GetMapping("/me/mypage")
     public ResponseEntity<MyPageResponseDto> getMyPage(
+            @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(name = "history_limit", defaultValue = "5") String historyLimit
     ) {
+        String email = userDetails.getUsername();
+
         MyPageResponseDto response = userService.getMyPage(
+                email,
                 parsePositiveInteger(historyLimit, "history_limit")
         );
 

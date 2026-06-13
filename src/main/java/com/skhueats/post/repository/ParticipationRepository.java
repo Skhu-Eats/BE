@@ -49,4 +49,20 @@ public interface ParticipationRepository extends JpaRepository<Participation, St
             @Param("joinedStatus") ParticipationStatus joinedStatus,
             Pageable pageable
     );
+
+    @Query("""
+            SELECT p FROM Participation p
+            JOIN FETCH p.post joinedPost
+            JOIN FETCH joinedPost.host
+            WHERE p.user.id = :userId
+            ORDER BY
+              CASE WHEN p.status = :joinedStatus THEN 0 ELSE 1 END,
+              joinedPost.meetingTime DESC,
+              p.createdAt DESC
+            """)
+    List<Participation> findHistoryPreviewByUserId(
+            @Param("userId") String userId,
+            @Param("joinedStatus") ParticipationStatus joinedStatus,
+            Pageable pageable
+    );
 }
