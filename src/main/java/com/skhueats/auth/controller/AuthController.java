@@ -3,6 +3,7 @@ package com.skhueats.auth.controller;
 import com.skhueats.auth.dto.request.EmailRequest;
 import com.skhueats.auth.dto.request.LoginRequest;
 import com.skhueats.auth.dto.request.LogoutRequest;
+import com.skhueats.auth.dto.request.PasswordResetSendCodeRequestDto;
 import com.skhueats.auth.dto.request.RegisterRequestDto;
 import com.skhueats.auth.dto.request.TokenRefreshRequest;
 import com.skhueats.auth.dto.request.VerifyCodeRequest;
@@ -31,6 +32,14 @@ public class AuthController {
     public Map<String, String> sendCode(@Valid @RequestBody EmailRequest request) {
         authService.sendVerificationCode(request.getEmail());
         return Map.of("message", "인증코드 발송 완료");
+    }
+
+    @PostMapping("/password/reset/send-code")
+    public ResponseEntity<Map<String, String>> sendPasswordResetCode(
+            @Valid @RequestBody PasswordResetSendCodeRequestDto request
+    ) {
+        authService.sendPasswordResetCode(request.getEmail());
+        return ResponseEntity.ok(Map.of("message", "비밀번호 재설정 인증번호 발송 완료"));
     }
 
     @PostMapping("/verify-code")
