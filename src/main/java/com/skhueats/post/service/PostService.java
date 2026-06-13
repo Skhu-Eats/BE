@@ -35,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -45,6 +46,7 @@ import java.util.stream.Collectors;
 public class PostService {
 
     private static final int DAILY_POST_LIMIT = 3;
+    private static final DateTimeFormatter NOTIFICATION_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     private static final ZoneId KST_ZONE = ZoneId.of("Asia/Seoul");
 
     private final PostRepository postRepository;
@@ -265,13 +267,34 @@ public class PostService {
     public void deletePost(String email, String postId) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
-        Post post = findPost(postId);
+        Post post = findPostForUpdate(postId);
 
         validatePostHost(post, user);
 
-        postFoodCategoryRepository.deleteByPostId(post.getId());
-        postRepository.delete(post);
+        if (post.getStatus() == PostStatus.CANCELLED) {
+            return;
+        }
+
+        List<Participation> participants = participationRepository.findAllByPostAndStatusWithUser(
+                post,
+                ParticipationStatus.JOINED
+        );
+
+        post.cancel();
         user.decreasePostCount();
+
+        participants.stream()
+                .map(Participation::getUser)
+                .filter(participant -> !participant.getId().equals(user.getId()))
+                .forEach(participant -> notificationService.createNotification(
+                        participant,
+                        NotificationType.POST_CANCELLED,
+                        "참여한 모임이 취소되었어요",
+                        post.getTitle() + " 모임 (" + formatNotificationTime(post) + " " + post.getLocation()
+                                + ")이 모집자에 의해 취소되었습니다.",
+                        "POST",
+                        post.getId()
+                ));
     }
 
     private PostStatus resolveStatus(String status) {
@@ -439,6 +462,10 @@ public class PostService {
         return participation.isJoined()
                 && post.getStatus() != PostStatus.CANCELLED
                 && now.isBefore(cancelDeadline);
+    }
+
+    private String formatNotificationTime(Post post) {
+        return post.getMeetingTime().format(NOTIFICATION_TIME_FORMATTER);
     }
 
     private void validatePageRequest(int page, int limit) {
