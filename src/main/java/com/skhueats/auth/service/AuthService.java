@@ -81,7 +81,11 @@ public class AuthService {
         validateSchoolEmail(normalizedEmail);
 
         if (!userRepository.existsByEmail(normalizedEmail)) {
-            throw new ApiException(ErrorCode.USER_NOT_FOUND);
+            return;
+        }
+
+        if (redisVerificationService.isLocked(normalizedEmail)) {
+            throw new ApiException(ErrorCode.VERIFICATION_ATTEMPT_LOCKED);
         }
 
         if (redisVerificationService.isResendBlocked(normalizedEmail)) {
