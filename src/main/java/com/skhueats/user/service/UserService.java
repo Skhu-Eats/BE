@@ -3,12 +3,20 @@ package com.skhueats.user.service;
 import com.skhueats.auth.repository.RefreshTokenRepository;
 import com.skhueats.global.exception.ApiException;
 import com.skhueats.global.exception.ErrorCode;
+import com.skhueats.post.entity.Participation;
+import com.skhueats.post.entity.ParticipationStatus;
+import com.skhueats.post.entity.PostFoodCategory;
+import com.skhueats.post.repository.ParticipationRepository;
+import com.skhueats.post.repository.PostFoodCategoryRepository;
 import com.skhueats.user.dto.request.UpdateMyProfileRequestDto;
+import com.skhueats.user.dto.response.MyPageHistoryPreviewResponseDto;
+import com.skhueats.user.dto.response.MyPageResponseDto;
 import com.skhueats.user.dto.response.MyProfileResponseDto;
 import com.skhueats.user.entity.User;
 import com.skhueats.user.repository.UserFoodPreferenceRepository;
 import com.skhueats.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,6 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +35,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserFoodPreferenceRepository userFoodPreferenceRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final ParticipationRepository participationRepository;
+    private final PostFoodCategoryRepository postFoodCategoryRepository;
 
     public MyProfileResponseDto getMyProfile() {
         String email = getCurrentUserEmail();
@@ -33,6 +45,30 @@ public class UserService {
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
 
         return createMyProfileResponse(user);
+    }
+
+    public MyPageResponseDto getMyPage(String email, int historyLimit) {
+        validateHistoryLimit(historyLimit);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+
+        List<String> foodCategories = userFoodPreferenceRepository.findCategoriesByUser(user);
+        List<Participation> recentParticipations = participationRepository.findHistoryPreviewByUserId(
+                user.getId(),
+                ParticipationStatus.JOINED,
+                PageRequest.of(0, historyLimit)
+        );
+
+        Map<String, List<String>> categoriesByPostId = findFoodCategoriesByPostId(recentParticipations);
+        List<MyPageHistoryPreviewResponseDto> recentHistories = recentParticipations.stream()
+                .map(participation -> MyPageHistoryPreviewResponseDto.of(
+                        participation,
+                        categoriesByPostId.getOrDefault(participation.getPost().getId(), List.of())
+                ))
+                .toList();
+
+        return MyPageResponseDto.of(user, foodCategories, recentHistories);
     }
 
     @Transactional
@@ -69,6 +105,29 @@ public class UserService {
         List<String> foodCategories = userFoodPreferenceRepository.findCategoriesByUser(user);
 
         return MyProfileResponseDto.from(user, foodCategories);
+    }
+
+    private Map<String, List<String>> findFoodCategoriesByPostId(List<Participation> participations) {
+        if (participations.isEmpty()) {
+            return Map.of();
+        }
+
+        List<String> postIds = participations.stream()
+                .map(participation -> participation.getPost().getId())
+                .distinct()
+                .toList();
+
+        return postFoodCategoryRepository.findAllByPostIdIn(postIds).stream()
+                .collect(Collectors.groupingBy(
+                        postFoodCategory -> postFoodCategory.getPost().getId(),
+                        Collectors.mapping(PostFoodCategory::getCategory, Collectors.toList())
+                ));
+    }
+
+    private void validateHistoryLimit(int historyLimit) {
+        if (historyLimit < 1 || historyLimit > 20) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST, "history_limit은 1~20만 허용됩니다.");
+        }
     }
 
     private String getCurrentUserEmail() {

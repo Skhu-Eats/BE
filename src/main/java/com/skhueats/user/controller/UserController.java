@@ -6,6 +6,7 @@ import com.skhueats.post.dto.response.PostListResponseDto;
 import com.skhueats.post.dto.response.ParticipationHistoryPageResponseDto;
 import com.skhueats.post.service.PostService;
 import com.skhueats.user.dto.request.UpdateMyProfileRequestDto;
+import com.skhueats.user.dto.response.MyPageResponseDto;
 import com.skhueats.user.dto.response.MyProfileResponseDto;
 import com.skhueats.user.service.UserService;
 import jakarta.validation.Valid;
@@ -35,6 +36,21 @@ public class UserController {
     public ResponseEntity<MyProfileResponseDto> getMyProfile() {
         MyProfileResponseDto responseDto = userService.getMyProfile();
         return ResponseEntity.ok(responseDto);
+    }
+
+    @GetMapping("/me/mypage")
+    public ResponseEntity<MyPageResponseDto> getMyPage(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(name = "history_limit", defaultValue = "5") String historyLimit
+    ) {
+        String email = userDetails.getUsername();
+
+        MyPageResponseDto response = userService.getMyPage(
+                email,
+                parsePositiveInteger(historyLimit, "history_limit")
+        );
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/me/posts")
