@@ -123,12 +123,12 @@ public class AuthService {
         String normalizedEmail = normalizeEmail(email);
         validateSchoolEmail(normalizedEmail);
 
-        User user = userRepository.findByEmail(normalizedEmail)
-                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
-
         if (!redisVerificationService.isPasswordResetEmailVerified(normalizedEmail)) {
             throw new ApiException(ErrorCode.PASSWORD_RESET_NOT_VERIFIED);
         }
+
+        User user = userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
 
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         refreshTokenRepository.deleteByEmail(normalizedEmail);
