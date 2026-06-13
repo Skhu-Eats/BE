@@ -18,24 +18,49 @@ public class EmailVerificationRepository {
         stringRedisTemplate.opsForValue().set(codeKey(email), code, ttlMinutes, TimeUnit.MINUTES);
     }
 
+    public void savePasswordResetCode(String email, String code, long ttlMinutes) {
+        stringRedisTemplate.opsForValue().set(passwordResetCodeKey(email), code, ttlMinutes, TimeUnit.MINUTES);
+    }
+
     public String getCode(String email) {
         return stringRedisTemplate.opsForValue().get(codeKey(email));
+    }
+
+    public String getPasswordResetCode(String email) {
+        return stringRedisTemplate.opsForValue().get(passwordResetCodeKey(email));
     }
 
     public boolean hasCode(String email) {
         return Boolean.TRUE.equals(stringRedisTemplate.hasKey(codeKey(email)));
     }
 
+    public boolean hasPasswordResetCode(String email) {
+        return Boolean.TRUE.equals(stringRedisTemplate.hasKey(passwordResetCodeKey(email)));
+    }
+
     public void saveVerifiedEmail(String email, long ttlMinutes) {
         stringRedisTemplate.opsForValue().set(verifiedKey(email), "true", ttlMinutes, TimeUnit.MINUTES);
+    }
+
+    public void savePasswordResetVerifiedEmail(String email, long ttlMinutes) {
+        stringRedisTemplate.opsForValue().set(passwordResetVerifiedKey(email), "true", ttlMinutes, TimeUnit.MINUTES);
     }
 
     public boolean hasVerifiedEmail(String email) {
         return Boolean.TRUE.equals(stringRedisTemplate.hasKey(verifiedKey(email)));
     }
 
+    public boolean hasPasswordResetVerifiedEmail(String email) {
+        return Boolean.TRUE.equals(stringRedisTemplate.hasKey(passwordResetVerifiedKey(email)));
+    }
+
     public boolean consumeVerifiedEmail(String email) {
         Boolean deleted = stringRedisTemplate.delete(verifiedKey(email));
+        return Boolean.TRUE.equals(deleted);
+    }
+
+    public boolean consumePasswordResetVerifiedEmail(String email) {
+        Boolean deleted = stringRedisTemplate.delete(passwordResetVerifiedKey(email));
         return Boolean.TRUE.equals(deleted);
     }
 
@@ -67,6 +92,10 @@ public class EmailVerificationRepository {
         stringRedisTemplate.delete(codeKey(email));
     }
 
+    public void deletePasswordResetCode(String email) {
+        stringRedisTemplate.delete(passwordResetCodeKey(email));
+    }
+
     public void deleteFailCount(String email) {
         stringRedisTemplate.delete(failKey(email));
     }
@@ -83,8 +112,16 @@ public class EmailVerificationRepository {
         return "email-code:" + email;
     }
 
+    private String passwordResetCodeKey(String email) {
+        return "password-reset-code:" + email;
+    }
+
     private String verifiedKey(String email) {
         return "verified-email:" + email;
+    }
+
+    private String passwordResetVerifiedKey(String email) {
+        return "password-reset-verified:" + email;
     }
 
     private String resendKey(String email) {

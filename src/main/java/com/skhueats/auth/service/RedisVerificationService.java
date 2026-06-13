@@ -28,11 +28,22 @@ public class RedisVerificationService {
         emailVerificationRepository.deleteLock(email);
     }
 
+    public void savePasswordResetVerificationCode(String email, String code) {
+        emailVerificationRepository.savePasswordResetCode(email, code, CODE_TTL_MINUTES);
+        emailVerificationRepository.saveResendCooldown(email, RESEND_COOLDOWN_SECONDS);
+        emailVerificationRepository.deleteFailCount(email);
+        emailVerificationRepository.deleteLock(email);
+    }
+
     /**
      * 이메일 인증 코드 조회
      */
     public String getVerificationCode(String email) {
         return emailVerificationRepository.getCode(email);
+    }
+
+    public String getPasswordResetVerificationCode(String email) {
+        return emailVerificationRepository.getPasswordResetCode(email);
     }
 
     /**
@@ -60,6 +71,25 @@ public class RedisVerificationService {
         return true;
     }
 
+    public boolean verifyPasswordResetCode(String email, String code) {
+        if (email == null || code == null || code.trim().isEmpty()) {
+            return false;
+        }
+
+        if (isLocked(email)) {
+            return false;
+        }
+
+        String savedCode = getPasswordResetVerificationCode(email);
+
+        if (savedCode == null || !savedCode.equals(code.trim())) {
+            increaseFailCount(email);
+            return false;
+        }
+
+        return true;
+    }
+
     /**
      * 이메일 인증 성공 처리
      *
@@ -71,11 +101,20 @@ public class RedisVerificationService {
         clearVerificationState(email);
     }
 
+    public void markPasswordResetEmailAsVerified(String email) {
+        emailVerificationRepository.savePasswordResetVerifiedEmail(email, VERIFIED_EMAIL_TTL_MINUTES);
+        clearPasswordResetVerificationState(email);
+    }
+
     /**
      * 이메일 인증 코드 존재 여부 확인
      */
     public boolean exists(String email) {
         return emailVerificationRepository.hasCode(email);
+    }
+
+    public boolean passwordResetCodeExists(String email) {
+        return emailVerificationRepository.hasPasswordResetCode(email);
     }
 
     /**
@@ -98,6 +137,10 @@ public class RedisVerificationService {
         return emailVerificationRepository.hasVerifiedEmail(email);
     }
 
+    public boolean isPasswordResetEmailVerified(String email) {
+        return emailVerificationRepository.hasPasswordResetVerifiedEmail(email);
+    }
+
     /**
      * 이메일 인증 완료 여부 확인 후 삭제
      *
@@ -115,6 +158,10 @@ public class RedisVerificationService {
      */
     public boolean consumeVerifiedEmail(String email) {
         return verifyAndConsumeEmail(email);
+    }
+
+    public boolean consumePasswordResetVerifiedEmail(String email) {
+        return emailVerificationRepository.consumePasswordResetVerifiedEmail(email);
     }
 
     /**
@@ -154,6 +201,13 @@ public class RedisVerificationService {
      */
     public void clearVerificationState(String email) {
         emailVerificationRepository.deleteCode(email);
+        emailVerificationRepository.deleteFailCount(email);
+        emailVerificationRepository.deleteLock(email);
+        emailVerificationRepository.deleteResendCooldown(email);
+    }
+
+    public void clearPasswordResetVerificationState(String email) {
+        emailVerificationRepository.deletePasswordResetCode(email);
         emailVerificationRepository.deleteFailCount(email);
         emailVerificationRepository.deleteLock(email);
         emailVerificationRepository.deleteResendCooldown(email);
