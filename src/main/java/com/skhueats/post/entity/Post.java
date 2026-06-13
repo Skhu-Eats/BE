@@ -131,6 +131,10 @@ public class Post {
         }
     }
 
+    public void cancel() {
+        this.status = PostStatus.CANCELLED;
+    }
+
     @PrePersist
     public void prePersist() {
         if (this.id == null) {
