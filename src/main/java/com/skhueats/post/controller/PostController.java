@@ -66,8 +66,8 @@ public class PostController {
             summary = "모집글 목록 조회 (필터)",
             description = """
                     모집글 목록을 조건에 따라 조회합니다. 모든 필터는 선택값이며, 미지정 시 전체를 반환합니다.
-                    - status 미지정 시 OPEN/CLOSED/CANCELLED 전체가 포함됩니다(풀방이어도 목록에 노출).
-                    - 마감시간이 지난 글은 제외됩니다(KST 기준).
+                    - status 미지정 시 OPEN/CLOSING_SOON/CLOSED/CANCELLED 전체가 포함됩니다.
+                    - 마감시간이 지난 글도 포함하여 전체 모집글을 반환합니다.
                     """
     )
     @ApiResponses({
@@ -79,7 +79,7 @@ public class PostController {
     public ResponseEntity<List<PostListResponseDto>> getPosts(
             @Parameter(description = "시간대 필터 (예: LUNCH/DINNER 등 정의된 슬롯)")
             @RequestParam(name = "time_slot", required = false) String timeSlot,
-            @Parameter(description = "모집 상태 필터: open / closed / cancelled")
+            @Parameter(description = "모집 상태 필터: open / closing_soon / closed / cancelled")
             @RequestParam(name = "status", required = false) String status,
             @Parameter(description = "장소 키워드 필터")
             @RequestParam(name = "location", required = false) String location,

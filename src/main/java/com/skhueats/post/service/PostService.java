@@ -14,6 +14,7 @@ import com.skhueats.post.dto.response.PostDetailResponseDto;
 import com.skhueats.post.dto.response.PostJoinStatus;
 import com.skhueats.post.dto.response.PostListResponseDto;
 import com.skhueats.post.dto.response.PostParticipantResponseDto;
+import com.skhueats.post.dto.response.PostResponseStatus;
 import com.skhueats.post.entity.FoodCategory;
 import com.skhueats.post.entity.Participation;
 import com.skhueats.post.entity.ParticipationStatus;
@@ -92,21 +93,26 @@ public class PostService {
             Integer maxParticipants,
             FoodCategory foodCategory
     ) {
-        PostStatus statusFilter = resolveStatus(status);
+        PostResponseStatus statusFilter = resolveStatus(status);
         TimeSlot slot = TimeSlot.from(timeSlot);
         validateMaxParticipantsFilter(maxParticipants);
         Integer startHour = (slot == null) ? null : slot.getStartHour();
         Integer endHour = (slot == null) ? null : slot.getEndHour();
 
         List<Post> posts = postRepository.findPostsByFilter(
-                statusFilter == null ? null : statusFilter.name(),
                 startHour,
                 endHour,
                 normalizeNullable(location),
                 maxParticipants,
-                foodCategory == null ? null : foodCategory.getLabel(),
-                LocalDateTime.now(KST_ZONE)
+                foodCategory == null ? null : foodCategory.getLabel()
         );
+
+        if (statusFilter != null) {
+            LocalDateTime now = LocalDateTime.now(KST_ZONE);
+            posts = posts.stream()
+                    .filter(post -> PostResponseStatus.from(post, now) == statusFilter)
+                    .toList();
+        }
 
         return createPostListResponse(posts);
     }
@@ -292,14 +298,14 @@ public class PostService {
         user.decreasePostCount();
     }
 
-    private PostStatus resolveStatus(String status) {
+    private PostResponseStatus resolveStatus(String status) {
         if (status == null || status.isBlank()) {
             return null;
         }
         try {
-            return PostStatus.valueOf(status.trim().toUpperCase());
+            return PostResponseStatus.valueOf(status.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new ApiException(ErrorCode.INVALID_REQUEST, "status는 open/closed/cancelled만 허용됩니다.");
+            throw new ApiException(ErrorCode.INVALID_REQUEST, "status는 open/closing_soon/closed/cancelled만 허용됩니다.");
         }
     }
 
