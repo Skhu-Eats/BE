@@ -112,10 +112,6 @@ public class Post {
 
     public void join() {
         this.currentParticipants++;
-
-        if (isFull()) {
-            this.status = PostStatus.CLOSED;
-        }
     }
 
     public void cancelJoin() {
@@ -126,9 +122,6 @@ public class Post {
 
         this.currentParticipants--;
 
-        if (this.status == PostStatus.CLOSED && !isFull()) {
-            this.status = PostStatus.OPEN;
-        }
     }
 
     @PrePersist
