@@ -29,8 +29,7 @@ public interface PostRepository extends JpaRepository<Post, String> {
 
     @Query(value = """
             SELECT p.* FROM posts p
-            WHERE (:status IS NULL OR LOWER(p.status) = LOWER(:status))
-              AND (:startHour IS NULL OR HOUR(p.meeting_time) >= :startHour)
+            WHERE (:startHour IS NULL OR HOUR(p.meeting_time) >= :startHour)
               AND (:endHour IS NULL OR HOUR(p.meeting_time) < :endHour)
               AND (:location IS NULL OR p.location LIKE CONCAT('%', :location, '%'))
               AND (:maxParticipants IS NULL OR p.max_participants = :maxParticipants)
@@ -39,17 +38,14 @@ public interface PostRepository extends JpaRepository<Post, String> {
                   WHERE pfc.post_id = p.id
                     AND pfc.category = :foodCategory
               ))
-              AND p.deadline >= :now
             ORDER BY p.deadline ASC
             """, nativeQuery = true)
     List<Post> findPostsByFilter(
-            @Param("status") String status,
             @Param("startHour") Integer startHour,
             @Param("endHour") Integer endHour,
             @Param("location") String location,
             @Param("maxParticipants") Integer maxParticipants,
-            @Param("foodCategory") String foodCategory,
-            @Param("now") LocalDateTime now
+            @Param("foodCategory") String foodCategory
     );
 
     @Query(value = """

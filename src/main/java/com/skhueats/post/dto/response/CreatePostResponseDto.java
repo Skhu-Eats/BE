@@ -47,6 +47,8 @@ public class CreatePostResponseDto {
     private LocalDateTime updatedAt;
 
     public static CreatePostResponseDto of(Post post, List<String> foodCategories) {
+        PostResponseStatus responseStatus = PostResponseStatus.from(post);
+
         return CreatePostResponseDto.builder()
                 .postId(post.getId())
                 .hostId(post.getHost().getId())
@@ -60,8 +62,8 @@ public class CreatePostResponseDto {
                 .currentParticipants(post.getCurrentParticipants())
                 .memo(post.getMemo())
                 .kakaoLink(post.getKakaoLink())
-                .status(post.getStatus().name())
-                .statusLabel(post.getStatus().getDescription())
+                .status(responseStatus.name())
+                .statusLabel(responseStatus.getDescription())
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
                 .build();

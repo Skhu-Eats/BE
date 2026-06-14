@@ -28,12 +28,14 @@ public class JoinPostResponseDto {
     private Boolean canJoin;
 
     public static JoinPostResponseDto of(Post post, PostJoinStatus joinStatus) {
+        PostResponseStatus responseStatus = PostResponseStatus.from(post);
+
         return JoinPostResponseDto.builder()
                 .postId(post.getId())
                 .currentParticipants(post.getCurrentParticipants())
                 .maxParticipants(post.getMaxParticipants())
-                .status(post.getStatus().name())
-                .statusLabel(post.getStatus().getDescription())
+                .status(responseStatus.name())
+                .statusLabel(responseStatus.getDescription())
                 .joinStatus(joinStatus.name())
                 .joinButtonLabel(joinStatus.getButtonLabel())
                 .canJoin(joinStatus.canJoin())

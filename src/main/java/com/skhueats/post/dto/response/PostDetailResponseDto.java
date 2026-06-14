@@ -81,6 +81,8 @@ public class PostDetailResponseDto {
             List<PostParticipantResponseDto> participants,
             boolean kakaoLinkVisible
     ) {
+        PostResponseStatus responseStatus = PostResponseStatus.from(post);
+
         PostDetailResponseDtoBuilder builder = PostDetailResponseDto.builder()
                 .postId(post.getId())
                 .hostId(post.getHost().getId())
@@ -99,8 +101,8 @@ public class PostDetailResponseDto {
                 .kakaoLink(kakaoLinkVisible ? post.getKakaoLink() : null)
                 .kakaoLinkVisible(kakaoLinkVisible)
                 .participants(participants)
-                .status(post.getStatus().name())
-                .statusLabel(post.getStatus().getDescription())
+                .status(responseStatus.name())
+                .statusLabel(responseStatus.getDescription())
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt());
 
