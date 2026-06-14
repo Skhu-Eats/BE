@@ -48,12 +48,16 @@ public interface ParticipationRepository extends JpaRepository<Participation, St
                     JOIN FETCH p.post joinedPost
                     JOIN FETCH joinedPost.host
                     WHERE p.user.id = :userId
+                      AND p.status = :joinedStatus
                     ORDER BY
-                      CASE WHEN p.status = :joinedStatus THEN 0 ELSE 1 END,
                       joinedPost.meetingTime DESC,
                       p.createdAt DESC
                     """,
-            countQuery = "SELECT COUNT(p) FROM Participation p WHERE p.user.id = :userId"
+            countQuery = """
+                    SELECT COUNT(p) FROM Participation p
+                    WHERE p.user.id = :userId
+                      AND p.status = :joinedStatus
+                    """
     )
     Page<Participation> findHistoryByUserId(
             @Param("userId") String userId,
@@ -66,8 +70,8 @@ public interface ParticipationRepository extends JpaRepository<Participation, St
             JOIN FETCH p.post joinedPost
             JOIN FETCH joinedPost.host
             WHERE p.user.id = :userId
+              AND p.status = :joinedStatus
             ORDER BY
-              CASE WHEN p.status = :joinedStatus THEN 0 ELSE 1 END,
               joinedPost.meetingTime DESC,
               p.createdAt DESC
             """)
