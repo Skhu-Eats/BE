@@ -251,7 +251,9 @@ public class PostService {
         Post post = findPost(postId);
 
         validatePostHost(post, user);
-        validateMeetingTimeFuture(requestDto.getMeetingTime());
+        if (!post.getMeetingTime().equals(requestDto.getMeetingTime())) {
+            validateMeetingTimeFuture(requestDto.getMeetingTime());
+        }
         validateMaxParticipants(post, requestDto.getMaxParticipants());
 
         post.update(

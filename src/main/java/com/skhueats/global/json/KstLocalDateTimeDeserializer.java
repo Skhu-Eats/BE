@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 
 public class KstLocalDateTimeDeserializer extends JsonDeserializer<LocalDateTime> {
 
@@ -23,12 +22,20 @@ public class KstLocalDateTimeDeserializer extends JsonDeserializer<LocalDateTime
         }
 
         String trimmed = value.trim();
-        try {
+        if (hasOffset(trimmed)) {
             return OffsetDateTime.parse(trimmed, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
                     .atZoneSameInstant(KST_ZONE)
                     .toLocalDateTime();
-        } catch (DateTimeParseException ignored) {
-            return LocalDateTime.parse(trimmed, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         }
+
+        return LocalDateTime.parse(trimmed, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+    }
+
+    private boolean hasOffset(String value) {
+        int timeSeparatorIndex = value.indexOf('T');
+
+        return value.endsWith("Z")
+                || value.contains("+")
+                || (timeSeparatorIndex != -1 && value.indexOf('-', timeSeparatorIndex) != -1);
     }
 }
