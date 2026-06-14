@@ -99,7 +99,7 @@ public class PostService {
         Integer endHour = (slot == null) ? null : slot.getEndHour();
 
         List<Post> posts = postRepository.findPostsByFilter(
-                statusFilter.name(),
+                statusFilter == null ? null : statusFilter.name(),
                 startHour,
                 endHour,
                 normalizeNullable(location),
@@ -294,7 +294,7 @@ public class PostService {
 
     private PostStatus resolveStatus(String status) {
         if (status == null || status.isBlank()) {
-            return PostStatus.OPEN;
+            return null;
         }
         try {
             return PostStatus.valueOf(status.trim().toUpperCase());
