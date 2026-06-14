@@ -113,8 +113,7 @@ public class UserController {
             summary = "내 참여 이력 조회 (페이지네이션)",
             description = """
                     내가 참여한 모임 이력을 페이지로 조회합니다.
-                    - 참여 중(JOINED)과 취소(CANCELLED) 이력이 모두 포함되며, 참여 중인 항목이 먼저 정렬됩니다.
-                    - "현재 참여 중인 모임"만 필요하면 클라이언트에서 participation_status == "JOINED"로 필터링하세요.
+                    - 현재 참여 중(JOINED)인 모임만 반환합니다. 참여 취소(CANCELLED) 이력은 제외됩니다.
                     - page는 1부터 시작합니다(기본 1, limit 기본 20).
                     """
     )
