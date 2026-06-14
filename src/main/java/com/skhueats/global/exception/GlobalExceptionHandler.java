@@ -4,6 +4,7 @@ import com.skhueats.global.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -53,6 +54,17 @@ public class GlobalExceptionHandler {
         }
 
         ErrorResponse response = ErrorResponse.of(ErrorCode.INVALID_REQUEST, message, request.getRequestURI());
+        return ResponseEntity.status(ErrorCode.INVALID_REQUEST.getStatus()).body(response);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException e,
+                                                                      HttpServletRequest request) {
+        ErrorResponse response = ErrorResponse.of(
+                ErrorCode.INVALID_REQUEST,
+                "요청 본문 형식이 올바르지 않습니다.",
+                request.getRequestURI()
+        );
         return ResponseEntity.status(ErrorCode.INVALID_REQUEST.getStatus()).body(response);
     }
 
