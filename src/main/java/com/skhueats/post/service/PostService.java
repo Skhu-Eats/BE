@@ -59,6 +59,7 @@ public class PostService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
 
+        validateMeetingTimeFuture(requestDto.getMeetingTime());
         validateDailyPostLimit(user);
 
         Post post = new Post(
@@ -250,6 +251,7 @@ public class PostService {
         Post post = findPost(postId);
 
         validatePostHost(post, user);
+        validateMeetingTimeFuture(requestDto.getMeetingTime());
         validateMaxParticipants(post, requestDto.getMaxParticipants());
 
         post.update(
@@ -323,6 +325,16 @@ public class PostService {
 
         if (todayPostCount >= DAILY_POST_LIMIT) {
             throw new ApiException(ErrorCode.POST_DAILY_LIMIT_EXCEEDED);
+        }
+    }
+
+    private void validateMeetingTimeFuture(LocalDateTime meetingTime) {
+        if (meetingTime == null) {
+            return;
+        }
+
+        if (!meetingTime.isAfter(LocalDateTime.now(KST_ZONE))) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST, "모임 시간은 현재 시간 이후여야 합니다.");
         }
     }
 

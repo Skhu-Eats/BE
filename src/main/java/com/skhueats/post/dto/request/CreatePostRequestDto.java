@@ -2,6 +2,8 @@ package com.skhueats.post.dto.request;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.skhueats.global.json.KstLocalDateTimeDeserializer;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,7 +32,7 @@ public class CreatePostRequestDto {
     private String location;
 
     @NotNull(message = "모임 시간은 필수입니다.")
-    @Future(message = "모임 시간은 현재 시간 이후여야 합니다.")
+    @JsonDeserialize(using = KstLocalDateTimeDeserializer.class)
     private LocalDateTime meetingTime;
 
     @NotNull(message = "모집 인원은 필수입니다.")

@@ -2,7 +2,8 @@ package com.skhueats.post.dto.request;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import jakarta.validation.constraints.Future;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.skhueats.global.json.KstLocalDateTimeDeserializer;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -36,7 +37,7 @@ public class UpdatePostRequestDto {
     private String location;
 
     @NotNull(message = "Meeting time is required.")
-    @Future(message = "Meeting time must be in the future.")
+    @JsonDeserialize(using = KstLocalDateTimeDeserializer.class)
     private LocalDateTime meetingTime;
 
     @NotNull(message = "Max participants is required.")

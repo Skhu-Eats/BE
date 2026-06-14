@@ -103,6 +103,25 @@ class DtoSnakeCaseJsonTest {
     }
 
     @Test
+    void createPostRequestConvertsOffsetMeetingTimeToKstLocalTime() throws Exception {
+        String json = """
+                {
+                  "title": "Dinner",
+                  "food_categories": ["Korean"],
+                  "location": "School gate",
+                  "meeting_time": "2026-06-14T10:45:00.000Z",
+                  "max_participants": 4,
+                  "memo": "Bring appetite",
+                  "kakao_link": "https://open.kakao.com/o/example"
+                }
+                """;
+
+        CreatePostRequestDto request = objectMapper.readValue(json, CreatePostRequestDto.class);
+
+        assertThat(request.getMeetingTime()).isEqualTo(LocalDateTime.of(2026, 6, 14, 19, 45));
+    }
+
+    @Test
     void updatePostRequestDeserializesSnakeCaseFields() throws Exception {
         String json = """
                 {
